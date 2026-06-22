@@ -472,56 +472,36 @@ var headerBadge = document.getElementById('header-status-badge');
 var btnPDF = document.getElementById('btn-export-pdf');
 
 // --- EXCEL GRID INTERACTION (EVENT DELEGATION) ---
-var activeColumn = null; 
-var selectionStartRow = null; 
-
-// Fungsi Pembantu Navigasi Panah (Sesuai penemuan Anda)
-function navigateGrid(tableId, currentInput, key) {
-  var table = document.getElementById(tableId);
-  if (!table) return;
-  
-  var currentRow = parseInt(currentInput.getAttribute('data-row'));
-  var currentCol = parseInt(currentInput.getAttribute('data-col'));
-  var targetInput = null;
-  
-  // Mencari input target hanya di dalam tabel yang spesifik
-  if (key === 'ArrowDown') targetInput = table.querySelector('input[data-row="' + (currentRow + 1) + '"][data-col="' + currentCol + '"]');
-  else if (key === 'ArrowUp') targetInput = table.querySelector('input[data-row="' + (currentRow - 1) + '"][data-col="' + currentCol + '"]');
-  else if (key === 'ArrowRight') targetInput = table.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol + 1) + '"]');
-  else if (key === 'ArrowLeft') targetInput = table.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol - 1) + '"]');
-  
-  if (targetInput) targetInput.focus();
-}
+// --- EXCEL GRID INTERACTION ---
 
 function setupExcelGrid(tableId) {
-  var table = document.getElementById(tableId);
-  if (!table) return;
-  var tbody = table.querySelector('tbody');
-  if (!tbody) return;
-  
-  var rows = tbody.querySelectorAll('tr');
-  rows.forEach(function(row, rowIdx) {
-    var inputs = row.querySelectorAll('input[type="number"], input[type="text"]');
-    inputs.forEach(function(input, colIdx) {
-      // Memberi identitas koordinat sel
-      input.setAttribute('data-row', rowIdx);
-      input.setAttribute('data-col', colIdx);
-      
-      // Menerapkan logika navigasi panah Anda (hanya dipasang 1x per input)
-      if (!input.hasAttribute('data-key-bound')) {
-        input.setAttribute('data-key-bound', 'true');
-        input.addEventListener('keydown', function(e) {
-          var key = e.key;
-          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
-            e.preventDefault();
-            navigateGrid(tableId, input, key);
-          }
-        });
-      }
-      
-    });
-  });
+
+var table = document.getElementById(tableId);
+
+if (!table) return;
+
+
+var inputs = table.querySelectorAll('input[type="number"]');
+
+
+inputs.forEach(function(input, index) {
+
+// Prevent arrow key default behavior on number inputs
+
+input.addEventListener('keydown', function(e) {
+
+var key = e.key;
+
+if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+
+e.preventDefault();
+
+navigateGrid(tableId, input, key);
+
 }
+
+}); 
+
 
 function clearSelection() {
   document.querySelectorAll('.excel-grid input.selected').forEach(function(inp) { inp.classList.remove('selected'); });
