@@ -344,12 +344,12 @@
                   <p class="text-sm text-gray-600 mt-1">Mahasiswa Program Studi S-1 Kimia FMIPA Universitas Negeri Surabaya</p>
                   <p class="text-sm text-gray-600">Pelaksana Mobilitas Akademik Magang 2026</p>
                 </div>
-                <p class="text-sm leading-relaxed">Aplikasi <strong>'SmartVerify'</strong> ini dikembangkan dengan CanvaAI sebagai miniproject dalam rangka kegiatan Mobilitas Akademik Magang Tahun 2026 di <strong>UPTD Laboratorium Kesehatan Kota Mojokerto</strong>.</p>
+                <p class="text-sm leading-relaxed">Aplikasi <strong>'SmartVerify'</strong> ini dikembangkan sebagai miniproject dalam rangka kegiatan Mobilitas Akademik Magang Tahun 2026 di <strong>UPTD Laboratorium Kesehatan Kota Mojokerto</strong>.</p>
               </div>
             </div>
             <div class="rounded-2xl p-6 shadow-lg border-2 border-cyan-100" style="background: linear-gradient(135deg, rgba(240, 253, 250, 0.8), rgba(224, 242, 254, 0.8));">
               <h3 class="text-lg font-bold text-teal-800 mb-3 flex items-center gap-2"><i data-lucide="heart" class="w-5 h-5 text-red-500"></i> Ucapan Terima Kasih</h3>
-              <p class="text-sm text-teal-900 leading-relaxed">Pengembang menyampaikan rasa terima kasih yang sebesar-besarnya kepada <strong>Dosen Pembimbing Lapangan (DPL)</strong> yaitu <strong>Ibu Dr. Indah Ardiningsih, S.Si., M.Sc.</strong> serta seluruh Pembimbing Lapangan di <strong>UPTD Laboratorium Kesehatan Kota Mojokerto</strong> atas segala bimbingan, arahan, dan dukungan penuh yang telah diberikan selama pelaksanaan magang dan penyusunan modul aplikasi analitik ini.</p>
+              <p class="text-sm text-teal-900 leading-relaxed">Penulis menyampaikan rasa terima kasih yang sebesar-besarnya kepada <strong>Dosen Pembimbing Lapangan (DPL)</strong> yaitu <strong>Ibu Dr. Indah Ardiningsih, S.Si., M.Sc.</strong> serta seluruh Pembimbing Lapangan di <strong>UPTD Laboratorium Kesehatan Kota Mojokerto</strong> atas segala bimbingan, arahan, dan dukungan penuh yang telah diberikan selama pelaksanaan magang dan penyusunan modul aplikasi analitik ini.</p>
             </div>
             <div class="rounded-2xl p-6 shadow-lg border-l-4 border-amber-400" style="background: linear-gradient(135deg, rgba(255, 251, 235, 0.9), rgba(254, 243, 220, 0.9));">
               <h3 class="text-lg font-bold text-amber-800 mb-3 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i> ⚠️ Disclaimer</h3>
@@ -472,205 +472,135 @@ var headerBadge = document.getElementById('header-status-badge');
 var btnPDF = document.getElementById('btn-export-pdf');
 
 // --- EXCEL GRID INTERACTION (EVENT DELEGATION) ---
-// --- EXCEL GRID INTERACTION ---
+var activeColumn = null; 
+var selectionStartRow = null; 
 
 function setupExcelGrid(tableId) {
-
-var table = document.getElementById(tableId);
-
-if (!table) return;
-
-
-var inputs = table.querySelectorAll('input[type="number"]');
-
-
-inputs.forEach(function(input, index) {
-
-// Prevent arrow key default behavior on number inputs
-
-input.addEventListener('keydown', function(e) {
-
-var key = e.key;
-
-if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
-
-e.preventDefault();
-
-navigateGrid(tableId, input, key);
-
+  var table = document.getElementById(tableId);
+  if (!table) return;
+  var tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr');
+  rows.forEach(function(row, rowIdx) {
+    var inputs = row.querySelectorAll('input[type="number"], input[type="text"]');
+    inputs.forEach(function(input, colIdx) {
+      input.setAttribute('data-row', rowIdx);
+      input.setAttribute('data-col', colIdx);
+    });
+  });
 }
-
-}); 
-
 
 function clearSelection() {
   document.querySelectorAll('.excel-grid input.selected').forEach(function(inp) { inp.classList.remove('selected'); });
+  activeColumn = null;
+  selectionStartRow = null;
 }
 
-// 1. MULAI BLOK (MOUSEDOWN)
 document.addEventListener('mousedown', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
   if (!input) return;
-  if (e.button !== 0) return; // Hanya klik kiri
-  
+  if (e.button !== 0) return;
   clearSelection();
-  activeColumn = input.getAttribute('data-col');
-  selectionStartRow = parseInt(input.getAttribute('data-row'));
+  var col = input.getAttribute('data-col');
+  var row = input.getAttribute('data-row');
+  activeColumn = col;
+  selectionStartRow = row;
   input.classList.add('selected');
 });
 
-// 2. DRAG BLOK (MOUSEOVER) - Anti-lompat saat ditarik cepat
 document.addEventListener('mouseover', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
-  if (!input || e.buttons !== 1 || activeColumn === null) return;
-  
+  if (!input || e.buttons !== 1) return;
   var col = input.getAttribute('data-col');
-  if (col !== activeColumn) return; // Jangan menyeberang kolom
-  
-  var currentRow = parseInt(input.getAttribute('data-row'));
-  var minRow = Math.min(selectionStartRow, currentRow);
-  var maxRow = Math.max(selectionStartRow, currentRow);
-  
-  var tbody = input.closest('tbody');
-  tbody.querySelectorAll('input').forEach(function(inp) { inp.classList.remove('selected'); });
-  
-  var inputs = tbody.querySelectorAll('input[data-col="' + col + '"]');
-  inputs.forEach(function(inp) {
-    var r = parseInt(inp.getAttribute('data-row'));
-    if (r >= minRow && r <= maxRow) inp.classList.add('selected');
-  });
+  if (col !== activeColumn) return;
+  input.classList.add('selected');
 });
 
-// 3. NAVIGASI KEYBOARD
 document.addEventListener('keydown', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
   if (!input) return;
-  
   var key = e.key;
   if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
-  
   e.preventDefault();
-  
   var currentRow = parseInt(input.getAttribute('data-row'));
   var currentCol = parseInt(input.getAttribute('data-col'));
   var targetInput = null;
-  
-  // KUNCI PERBAIKAN: Cari target input HANYA di dalam tabel (tbody) yang sedang aktif
-  var currentTbody = input.closest('tbody');
-  if (!currentTbody) return;
-  
-  if (key === 'ArrowDown') targetInput = currentTbody.querySelector('input[data-row="' + (currentRow + 1) + '"][data-col="' + currentCol + '"]');
-  else if (key === 'ArrowUp') targetInput = currentTbody.querySelector('input[data-row="' + (currentRow - 1) + '"][data-col="' + currentCol + '"]');
-  else if (key === 'ArrowRight') targetInput = currentTbody.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol + 1) + '"]');
-  else if (key === 'ArrowLeft') targetInput = currentTbody.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol - 1) + '"]');
-  
+  if (key === 'ArrowDown') targetInput = document.querySelector('input[data-row="' + (currentRow + 1) + '"][data-col="' + currentCol + '"]');
+  else if (key === 'ArrowUp') targetInput = document.querySelector('input[data-row="' + (currentRow - 1) + '"][data-col="' + currentCol + '"]');
+  else if (key === 'ArrowRight') targetInput = document.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol + 1) + '"]');
+  else if (key === 'ArrowLeft') targetInput = document.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol - 1) + '"]');
   if (targetInput) targetInput.focus();
 });
 
-// 4. SHIFT + CLICK
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
-  if (!input || !e.shiftKey || activeColumn === null || selectionStartRow === null) return;
-  
+  if (!input || !e.shiftKey || activeColumn === null) return;
   var col = input.getAttribute('data-col');
   var row = parseInt(input.getAttribute('data-row'));
+  var startRow = parseInt(selectionStartRow);
   if (col !== activeColumn) return;
-  
-  var minRow = Math.min(selectionStartRow, row);
-  var maxRow = Math.max(selectionStartRow, row);
-  var tbody = input.closest('tbody');
-  
-  tbody.querySelectorAll('input').forEach(function(inp) { inp.classList.remove('selected'); });
-  var inputs = tbody.querySelectorAll('input[data-col="' + col + '"]');
-  inputs.forEach(function(inp) {
-    var r = parseInt(inp.getAttribute('data-row'));
-    if (r >= minRow && r <= maxRow) inp.classList.add('selected');
+  var minRow = Math.min(startRow, row);
+  var maxRow = Math.max(startRow, row);
+  var currentTable = input.closest('.excel-grid');
+  var tbody = currentTable.querySelector('tbody');
+  var rows = tbody.querySelectorAll('tr');
+  rows.forEach(function(rowEl, rowIdx) {
+    var inputs = rowEl.querySelectorAll('input');
+    inputs.forEach(function(inp) {
+      var inpCol = inp.getAttribute('data-col');
+      var inpRow = parseInt(inp.getAttribute('data-row'));
+      if (inpCol === col && inpRow >= minRow && inpRow <= maxRow) {
+        inp.classList.add('selected');
+      }
+    });
   });
 });
 
-// 5. PASTE (CTRL+V) - Dilengkapi trigger otomatis
 document.addEventListener('paste', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
   if (!input) return;
-  
   var pasteData = (e.clipboardData || window.clipboardData).getData('text');
   if (!pasteData) return;
   e.preventDefault();
-  
   var startRow = parseInt(input.getAttribute('data-row'));
   var startCol = parseInt(input.getAttribute('data-col'));
-  var tbody = input.closest('tbody');
+  var currentTable = input.closest('.excel-grid');
+  var tbody = currentTable.querySelector('tbody');
   var rows = tbody.querySelectorAll('tr');
-  
-  var lines = pasteData.split(/\r?\n/);
-  if(lines[lines.length - 1] === "") lines.pop(); // Hapus sisa baris kosong bawaan Excel
-  
+  var lines = pasteData.split(/\r?\n/).filter(function(line) { return line.trim(); });
   lines.forEach(function(line, lineIdx) {
     var rowIdx = startRow + lineIdx;
     if (rowIdx >= rows.length) return;
     var cells = line.split('\t');
     var rowEl = rows[rowIdx];
     var inputs = rowEl.querySelectorAll('input');
-    
     cells.forEach(function(cell, cellIdx) {
       var colIdx = startCol + cellIdx;
       if (colIdx >= inputs.length) return;
-      // Konversi koma indonesia ke titik agar dikenali sistem
-      inputs[colIdx].value = cell.trim().replace(',', '.');
-      // Beritahu sistem bahwa ada data yang masuk (trigger kalkulasi)
-      inputs[colIdx].dispatchEvent(new Event('input', { bubbles: true })); 
+      inputs[colIdx].value = cell.trim();
     });
   });
+  saveProjectData();
 });
 
-// 6. COPY (CTRL+C) - Menggunakan trik aman untuk file lokal
 document.addEventListener('keydown', function(e) {
   if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return;
-  
   var selectedInputs = Array.from(document.querySelectorAll('input.selected'));
-  if (selectedInputs.length === 0) return; // Jika tidak ada yang diblok, biarkan browser mengcopy teks biasa
-  
+  if (selectedInputs.length === 0) return;
   e.preventDefault();
-  
-  // Mengurutkan sel agar copy paste tidak terbalik
-  selectedInputs.sort(function(a, b) {
-      return parseInt(a.getAttribute('data-row')) - parseInt(b.getAttribute('data-row'));
-  });
-  
   var rowData = {};
   selectedInputs.forEach(function(input) {
     var row = input.getAttribute('data-row');
     if (!rowData[row]) rowData[row] = [];
     rowData[row].push(input.value);
   });
-  
   var copyString = Object.values(rowData).map(function(cols) { return cols.join('\t'); }).join('\n');
-  
-  // Trik Textarea Tersembunyi (Aman untuk file:///)
-  var tempTextArea = document.createElement('textarea');
-  tempTextArea.value = copyString;
-  tempTextArea.style.position = 'fixed';
-  tempTextArea.style.opacity = '0';
-  document.body.appendChild(tempTextArea);
-  tempTextArea.select();
-  tempTextArea.setSelectionRange(0, 99999);
-  
-  try {
-    document.execCommand('copy');
-    // Beri efek kedip hijau sebagai tanda berhasil di-copy
-    selectedInputs.forEach(function(inp) {
-        inp.style.backgroundColor = '#d1fae5'; 
-        setTimeout(function(){ inp.style.backgroundColor = ''; }, 250);
-    });
-  } catch (err) {
-    console.error('Browser tidak mendukung copy otomatis', err);
-  }
-  document.body.removeChild(tempTextArea);
+  navigator.clipboard.writeText(copyString).catch(function() {});
 });
 
 // --- NAVIGATION ---
