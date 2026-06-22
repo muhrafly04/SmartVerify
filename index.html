@@ -655,10 +655,17 @@ function calcDilutionSingle() {
     document.getElementById('dil-single-result').classList.add('hidden');
     return;
   }
+  
   var v1 = (v2 * m2) / m1;
-  document.getElementById('dil-result').textContent = v1.toFixed(4);
+  
+  // Menggunakan fungsi formatNum agar nol berlebih otomatis terhapus
+  var v1Fmt = formatNum(v1);
+  var v2Fmt = formatNum(v2);
+
+  document.getElementById('dil-result').textContent = v1Fmt;
   var sop = document.getElementById('dil-sop');
-  sop.innerHTML = 'Pipet <strong>' + v1.toFixed(4) + ' mL</strong> larutan standar, masukkan ke labu ukur <strong>' + v2 + ' mL</strong>, tepatkan hingga tanda batas.';
+  sop.innerHTML = 'Pipet <strong>' + v1Fmt + ' mL</strong> larutan standar, masukkan ke labu ukur <strong>' + v2Fmt + ' mL</strong>, tepatkan hingga tanda batas.';
+  
   document.getElementById('dil-single-result').classList.remove('hidden');
   document.getElementById('dil-sop').classList.remove('hidden');
   document.getElementById('dil-recipe-container').classList.add('hidden');
