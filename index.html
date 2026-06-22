@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartVerify - UPTD Laboratorium Kesehatan Kota Mojokerto</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; margin: 0; overflow: hidden; }
+    .app-wrapper { display: flex; height: 100vh; overflow: hidden; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+    .badge-pass { background: #10B981; color: #fff; }
+    .badge-fail { background: #EF4444; color: #fff; }
+    .badge-pending { background: #F59E0B; color: #fff; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .sidebar { width: 260px; min-width: 260px; transition: transform .3s ease, margin .3s ease; overflow-y: auto; }
+    .sidebar.collapsed { transform: translateX(-260px); margin-left: -260px; }
+    .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .content-scroll { flex: 1; overflow-y: auto; padding: 24px 32px; }
+    .sidebar-item { cursor: pointer; padding: 12px 20px; border-radius: 10px; transition: background .2s; }
+    .sidebar-item:hover { background: rgba(255, 255, 255, 0.15); }
+    .sidebar-item.active { background: rgba(255, 255, 255, 0.25); font-weight: 600; }
+    .excel-grid { user-select: none; }
+    .excel-grid td input { border: 1px solid #e2e8f0; outline: none; padding: 6px 8px; width: 100%; text-align: center; transition: border-color .15s; user-select: text; }
+    .excel-grid td input:focus { border-color: #0B6B7A; box-shadow: 0 0 0 2px rgba(11, 107, 122, 0.2); }
+    .excel-grid td input.selected { background-color: rgba(59, 130, 246, 0.2); border-color: #3B82F6; }
+    .modal-overlay { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+    .action-dropdown { position: absolute; right: 0; top: 100%; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); min-width: 180px; overflow: hidden; z-index: 20; }
+    .action-dropdown button { display: block; width: 100%; text-align: left; padding: 10px 16px; font-size: 14px; transition: background .15s; }
+    .action-dropdown button:hover { background: #f0fdfa; }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .confirm-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 28px; animation: popIn .4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .confirm-icon.success { background: #d1fae5; color: #059669; }
+    .confirm-icon.error { background: #fee2e2; color: #dc2626; }
+    .bento-card { transition: all 0.3s ease-out; }
+    .bento-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+    .dilution-fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #0B6B7A, #0B4F5C); color: #fff; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(11, 107, 122, 0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 40; transition: all .3s; }
+    .dilution-fab:hover { box-shadow: 0 6px 16px rgba(11, 107, 122, 0.6); transform: scale(1.1); }
+    @media(max-width: 768px) { .sidebar { position: fixed; z-index: 50; height: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <aside id="sidebar" class="sidebar bg-gradient-to-b from-[#0B4F5C] to-[#0B6B7A] text-white flex flex-col z-40 shadow-xl">
+      <div class="p-5 border-b border-white/20 flex flex-col items-center gap-2">
+        <h2 class="text-2xl font-bold text-center">SmartVerify</h2>
+      </div>
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto" role="navigation">
+        <div class="sidebar-item active" data-page="home"><i data-lucide="home" class="inline w-4 h-4 mr-2"></i>Home</div>
+        <div class="sidebar-item" data-page="belajar"><i data-lucide="book-open" class="inline w-4 h-4 mr-2"></i>Belajar Verifikasi</div>
+        <div class="sidebar-item" data-page="linearitas"><i data-lucide="trending-up" class="inline w-4 h-4 mr-2"></i>Linearitas</div>
+        <div class="sidebar-item" data-page="presisi"><i data-lucide="target" class="inline w-4 h-4 mr-2"></i>Presisi</div>
+        <div class="sidebar-item" data-page="akurasi"><i data-lucide="check-circle" class="inline w-4 h-4 mr-2"></i>Akurasi</div>
+        <div class="sidebar-item" data-page="reprodusibilitas"><i data-lucide="users" class="inline w-4 h-4 mr-2"></i>Reprodusibilitas</div>
+        <div class="sidebar-item" data-page="mdl"><i data-lucide="activity" class="inline w-4 h-4 mr-2"></i>MDL & LOQ</div>
+        <div class="sidebar-item" data-page="profil"><i data-lucide="user-circle" class="inline w-4 h-4 mr-2"></i>Profil</div>
+      </nav>
+    </aside>
+
+    <div class="main-area">
+      <header class="sticky top-0 z-30 bg-white/90 backdrop-filter backdrop-blur border-b px-4 py-3 flex items-center gap-3">
+        <button id="hamburger-btn" class="p-2 rounded-lg hover:bg-gray-100" aria-label="Toggle menu"><i data-lucide="menu" class="w-6 h-6 text-gray-700"></i></button>
+        <h1 class="text-lg font-bold text-gray-800 truncate">Verifikasi Metode SNI 6989-84:2019</h1>
+        <span id="project-indicator" class="text-sm text-teal-700 font-medium truncate hidden"></span>
+        <span id="header-status-badge" class="hidden text-xs font-bold px-3 py-1 rounded-full"></span>
+        <button id="btn-export-pdf" class="hidden ml-auto px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-bold text-sm shadow hover:shadow-lg transition-all flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i>Export PDF</button>
+      </header>
+
+      <div class="content-scroll">
+        <section id="page-home" class="page-content">
+          <div class="mb-8">
+            <h2 id="greeting-text" class="text-3xl font-bold text-gray-800 mb-2"></h2>
+            <p class="text-gray-500 text-base leading-relaxed">Siap memastikan keakuratan data hari ini? Mari selesaikan verifikasi metode dengan presisi tinggi!</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-5 shadow-md border-l-4 border-teal-500">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-600 font-medium mb-1">Total Proyek</p>
+                  <p id="stat-total" class="text-3xl font-bold text-gray-800">0</p>
+                </div><i data-lucide="folder" class="w-10 h-10 text-teal-500 opacity-80"></i>
+              </div>
+            </div>
+            <div class="glass-card rounded-xl p-5 shadow-md border-l-4 border-green-500">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-600 font-medium mb-1">Terverifikasi</p>
+                  <p id="stat-verified" class="text-3xl font-bold text-green-600">0</p>
+                </div><i data-lucide="shield-check" class="w-10 h-10 text-green-500 opacity-80"></i>
+              </div>
+            </div>
+            <div class="glass-card rounded-xl p-5 shadow-md border-l-4 border-amber-500">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-600 font-medium mb-1">Belum Lengkap</p>
+                  <p id="stat-pending" class="text-3xl font-bold text-amber-600">0</p>
+                </div><i data-lucide="alert-circle" class="w-10 h-10 text-amber-500 opacity-80"></i>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <h3 class="text-xl font-bold text-gray-800">Daftar Proyek Verifikasi</h3>
+            <button id="btn-new-project" class="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"><i data-lucide="plus" class="w-5 h-5"></i><span>Buat Proyek Baru</span></button>
+          </div>
+          <div id="projects-table-wrapper" class="hidden bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-gray-200">
+                  <tr>
+                    <th class="text-left px-6 py-4 font-semibold text-gray-700">Nama Proyek</th>
+                    <th class="text-left px-6 py-4 font-semibold text-gray-700">Tanggal</th>
+                    <th class="text-left px-6 py-4 font-semibold text-gray-700">Parameter</th>
+                    <th class="text-left px-6 py-4 font-semibold text-gray-700">Analis</th>
+                    <th class="text-center px-6 py-4 font-semibold text-gray-700">Status</th>
+                    <th class="text-center px-6 py-4 font-semibold text-gray-700">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="project-table-body" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="empty-state" class="text-center py-16"><i data-lucide="folder-open" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+            <p class="text-gray-500 text-lg">Belum ada proyek. Klik "Buat Proyek Baru" untuk memulai.</p>
+          </div>
+        </section>
+
+        <section id="page-belajar" class="page-content hidden">
+          <div class="mb-12">
+            <div class="glass-card rounded-2xl p-8 shadow-lg mb-8 bg-gradient-to-br from-teal-50 to-cyan-50 border-l-4 border-teal-600">
+              <h1 class="text-3xl font-bold text-gray-800 mb-3">Pusat Pengetahuan Verifikasi</h1>
+              <p class="text-gray-600 text-base leading-relaxed">Pelajari konsep analitik, parameter SNI, dan panduan penggunaan aplikasi SmartVerify di sini.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bento-card group rounded-2xl p-8 shadow-lg bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-100/50 cursor-default">
+                <div class="flex items-start gap-3 mb-4">
+                  <div class="p-3 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors"><i data-lucide="lightbulb" class="w-6 h-6 text-amber-600"></i></div>
+                  <h3 class="text-xl font-bold text-gray-800">Konsep Dasar</h3>
+                </div>
+                <div class="space-y-3">
+                  <h4 class="font-semibold text-gray-800 text-base">Apa itu Verifikasi Metode?</h4>
+                  <p class="text-sm leading-relaxed text-gray-700">Berdasarkan ISO/IEC 17025, laboratorium harus memverifikasi bahwa mereka dapat melakukan metode standar dengan benar sebelum menggunakannya.</p>
+                  <p class="text-sm leading-relaxed text-gray-700">Berbeda dengan <strong>Validasi</strong> untuk metode baru, <strong>Verifikasi</strong> membuktikan kompetensi personel, kesesuaian alat, dan kondisi lingkungan laboratorium.</p>
+                </div>
+              </div>
+              <div class="bento-card group rounded-2xl p-8 shadow-lg bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50 cursor-default">
+                <div class="flex items-start gap-3 mb-4">
+                  <div class="p-3 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors"><i data-lucide="clipboard-list" class="w-6 h-6 text-teal-600"></i></div>
+                  <h3 class="text-xl font-bold text-gray-800">Parameter SNI 6989-84:2019</h3>
+                </div>
+                <div class="space-y-3 text-sm">
+                  <div><p class="font-semibold text-gray-800 mb-1">📈 Linearitas</p><p class="text-gray-700 text-xs">Respon alat proporsional terhadap konsentrasi. Syarat: r ≥ 0.995</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">🎯 Presisi</p><p class="text-gray-700 text-xs">Kedekatan hasil antar pengulangan (7×). Syarat: %RSD ≤ 0.67 × CV Horwitz</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">✅ Akurasi</p><p class="text-gray-700 text-xs">Kedekatan dengan nilai sebenarnya. Syarat: 85%–115% Recovery</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">👥 Reprodusibilitas</p><p class="text-gray-700 text-xs">Konsistensi antar analis. Syarat: %RSD gabungan ≤ CV Horwitz</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">🔬 MDL & LOQ</p><p class="text-gray-700 text-xs">MDL = 3.14×SD, LOQ = 10×SD</p></div>
+                </div>
+              </div>
+              <div class="bento-card group rounded-2xl p-8 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100/50 cursor-default md:col-span-2">
+                <div class="flex items-start gap-3 mb-4">
+                  <div class="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors"><i data-lucide="book" class="w-6 h-6 text-purple-600"></i></div>
+                  <h3 class="text-xl font-bold text-gray-800">Kamus Istilah Lab</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div><p class="font-semibold text-gray-800 mb-1">Spike Matrix</p><p class="text-gray-700 text-xs">Contoh uji yang diperkaya dengan larutan baku untuk uji akurasi.</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">Blanko Pereaksi</p><p class="text-gray-700 text-xs">Air bebas mineral dengan perlakuan identik untuk kontrol kontaminasi.</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">CV Horwitz</p><p class="text-gray-700 text-xs">Nilai batas presisi analitik berbasis fraksi konsentrasi analit.</p></div>
+                  <div><p class="font-semibold text-gray-800 mb-1">CRM</p><p class="text-gray-700 text-xs">Bahan acuan bersertifikat dengan validitas internasional terjamin.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-linearitas" class="page-content hidden">
+          <div class="glass-card rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4" title="Syarat SNI 6989-84:2019: r >= 0.995">Linearitas</h2>
+            <div class="overflow-x-auto">
+              <table class="excel-grid w-full text-sm mb-4" data-table="lin-table">
+                <thead>
+                  <tr>
+                    <th class="text-left p-2 w-12">No</th>
+                    <th class="text-left p-2">Konsentrasi (mg/L)</th>
+                    <th class="text-left p-2">Absorbansi</th>
+                    <th class="w-8"></th>
+                  </tr>
+                </thead>
+                <tbody id="lin-table"></tbody>
+              </table>
+            </div>
+            <div class="flex gap-3 mb-4 flex-wrap">
+              <button id="btn-add-lin-row" class="px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Baris</button> 
+              <button id="btn-calc-lin" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
+            </div>
+            <div id="lin-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+            <div id="lin-chart-container" class="hidden mt-6 pt-6 border-t">
+              <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                <div class="lg:col-span-3 relative bg-white border border-gray-200 p-2 rounded-lg">
+                  <canvas id="lin-chart" width="600" height="350" class="w-full"></canvas>
+                </div>
+                <div id="lin-equation" class="text-center p-5 bg-blue-50 rounded-lg border border-blue-200 sticky top-6 h-fit shadow-sm">
+                  <p class="text-xs text-gray-600 mb-2 font-semibold uppercase tracking-wide">Persamaan Regresi</p>
+                  <p id="lin-eq-text" class="text-lg font-bold text-blue-700 font-mono mb-4 leading-tight">y = ax + b</p>
+                  <div class="h-px bg-blue-200 my-4"></div>
+                  <p class="text-xs text-gray-600 mb-2 font-semibold uppercase tracking-wide">Koefisien Korelasi</p>
+                  <p id="lin-r-text" class="text-3xl font-bold text-teal-700">r = 0.000</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="lin-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
+            <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu melalui menu <strong>Home</strong>.</p>
+          </div>
+        </section>
+
+        <section id="page-presisi" class="page-content hidden">
+          <div class="glass-card rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4" title="%RSD = (SD / Mean) × 100%">Presisi</h2>
+            <p class="text-sm text-gray-600 mb-3">Masukkan 7 data konsentrasi pengulangan (mg/L):</p>
+            <table class="excel-grid w-full text-sm mb-4" data-table="pres-table">
+              <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi (mg/L)</th></tr></thead>
+              <tbody id="pres-table"></tbody>
+            </table>
+            <button id="btn-calc-pres" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
+            <div id="pres-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+          </div>
+          <div id="pres-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
+            <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
+          </div>
+        </section>
+
+        <section id="page-akurasi" class="page-content hidden">
+          <div class="glass-card rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4" title="Recovery = [(C_diukur - C_sampel) / C_spike] × 100%">Akurasi</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div><label class="text-sm font-medium" for="akur-csampel">C Sampel (mg/L)</label><input type="number" step="any" id="akur-csampel" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+              <div><label class="text-sm font-medium" for="akur-cspike">C Spike (mg/L)</label><input type="number" step="any" id="akur-cspike" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">7 data konsentrasi LFM (mg/L):</p>
+            <table class="excel-grid w-full text-sm mb-4" data-table="akur-table">
+              <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">C LFM (mg/L)</th></tr></thead>
+              <tbody id="akur-table"></tbody>
+            </table>
+            <button id="btn-calc-akur" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
+            <div id="akur-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+          </div>
+          <div id="akur-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
+            <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
+          </div>
+        </section>
+
+        <section id="page-reprodusibilitas" class="page-content hidden">
+          <div class="glass-card rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4" title="CV Horwitz = 2^(1 - 0.5 × log₁₀(C))">Reprodusibilitas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <div>
+                <p id="repro-a-label" class="text-sm font-semibold mb-2">Analis A (7 data, mg/L):</p>
+                <table class="excel-grid w-full text-sm" data-table="repro-a-table">
+                  <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi</th></tr></thead>
+                  <tbody id="repro-a-table"></tbody>
+                </table>
+              </div>
+              <div>
+                <p id="repro-b-label" class="text-sm font-semibold mb-2">Analis B (7 data, mg/L):</p>
+                <table class="excel-grid w-full text-sm" data-table="repro-b-table">
+                  <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi</th></tr></thead>
+                  <tbody id="repro-b-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <button id="btn-calc-repro" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
+            <div id="repro-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+          </div>
+          <div id="repro-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
+            <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
+          </div>
+        </section>
+
+        <section id="page-mdl" class="page-content hidden">
+          <div class="glass-card rounded-2xl p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4" title="MDL = 3.14 × SD; LOQ = 10 × SD">MDL & LOQ</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div><label class="text-sm font-medium" for="mdl-csampel">Konsentrasi Sampel (mg/L)</label><input type="number" step="any" id="mdl-csampel" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+              <div><label class="text-sm font-medium" for="mdl-cspike">Konsentrasi Spike (mg/L)</label><input type="number" step="any" id="mdl-cspike" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+              <div><label class="text-sm font-medium" for="mdl-baku-mutu">Baku Mutu yang Diacu (mg/L)</label><input type="number" step="any" id="mdl-baku-mutu" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">7 data pengulangan blanko spike:</p>
+            <div class="overflow-x-auto">
+              <table class="excel-grid w-full text-sm mb-4" data-table="mdl-table">
+                <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi (mg/L)</th></tr></thead>
+                <tbody id="mdl-table"></tbody>
+              </table>
+            </div>
+            <button id="btn-calc-mdl" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
+            <div id="mdl-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+            
+            <div id="mdl-acceptance-table" class="hidden border-t pt-6 mt-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">Tabel Uji Keberterimaan Penentuan MDL</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm border border-gray-300">
+                  <thead class="bg-gradient-to-r from-teal-50 to-cyan-50">
+                    <tr>
+                      <th class="border border-gray-300 px-4 py-2 text-left">No</th>
+                      <th class="border border-gray-300 px-4 py-2 text-left">Parameter</th>
+                      <th class="border border-gray-300 px-4 py-2 text-left">Syarat MDL</th>
+                      <th class="border border-gray-300 px-4 py-2 text-left">Hasil</th>
+                      <th class="border border-gray-300 px-4 py-2 text-center">Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mdl-acceptance-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="mdl-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
+            <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
+          </div>
+        </section>
+
+        <section id="page-profil" class="page-content hidden">
+          <div class="space-y-6">
+            <div class="glass-card rounded-2xl p-6 shadow-lg">
+              <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="settings" class="w-6 h-6 text-teal-600"></i> ⚙️ Pengaturan Akun</h2>
+              <form id="profil-form" class="space-y-4">
+                <div><label class="text-sm font-semibold text-gray-700 block mb-2" for="profil-name">Nama Analis</label><input type="text" id="profil-name" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Masukkan nama analis..." required></div>
+                <div class="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                  <p class="text-sm text-teal-800"><strong>💡 Info:</strong> Nama ini akan ditampilkan pada sapaan di halaman Home.</p>
+                </div>
+                <div class="flex gap-3"><button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"><i data-lucide="save" class="w-5 h-5"></i> Simpan Nama</button><button type="button" id="profil-cancel" class="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-600 hover:bg-gray-50">Batal</button></div>
+                <div id="profil-message" class="hidden rounded-lg p-3 text-sm font-medium"></div>
+              </form>
+            </div>
+            <div class="glass-card rounded-2xl p-6 shadow-lg">
+              <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="info" class="w-6 h-6 text-blue-600"></i> Tentang Aplikasi</h3>
+              <div class="space-y-4 text-gray-700 leading-relaxed">
+                <div>
+                  <p class="font-bold text-lg text-gray-800">Muhammad Rafly Aditya Firmansyah</p>
+                  <p class="text-sm text-gray-600 mt-1">Mahasiswa Program Studi S-1 Kimia FMIPA Universitas Negeri Surabaya</p>
+                  <p class="text-sm text-gray-600">Pelaksana Mobilitas Akademik Magang 2026</p>
+                </div>
+                <p class="text-sm leading-relaxed">Aplikasi <strong>'SmartVerify'</strong> ini dikembangkan sebagai miniproject dalam rangka kegiatan Mobilitas Akademik Magang Tahun 2026 di <strong>UPTD Laboratorium Kesehatan Kota Mojokerto</strong>.</p>
+              </div>
+            </div>
+            <div class="rounded-2xl p-6 shadow-lg border-2 border-cyan-100" style="background: linear-gradient(135deg, rgba(240, 253, 250, 0.8), rgba(224, 242, 254, 0.8));">
+              <h3 class="text-lg font-bold text-teal-800 mb-3 flex items-center gap-2"><i data-lucide="heart" class="w-5 h-5 text-red-500"></i> Ucapan Terima Kasih</h3>
+              <p class="text-sm text-teal-900 leading-relaxed">Penulis menyampaikan rasa terima kasih yang sebesar-besarnya kepada <strong>Dosen Pembimbing Lapangan (DPL)</strong> yaitu <strong>Ibu Dr. Indah Ardiningsih, S.Si., M.Sc.</strong> serta seluruh Pembimbing Lapangan di <strong>UPTD Laboratorium Kesehatan Kota Mojokerto</strong> atas segala bimbingan, arahan, dan dukungan penuh yang telah diberikan selama pelaksanaan magang dan penyusunan modul aplikasi analitik ini.</p>
+            </div>
+            <div class="rounded-2xl p-6 shadow-lg border-l-4 border-amber-400" style="background: linear-gradient(135deg, rgba(255, 251, 235, 0.9), rgba(254, 243, 220, 0.9));">
+              <h3 class="text-lg font-bold text-amber-800 mb-3 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i> ⚠️ Disclaimer</h3>
+              <p class="text-sm text-amber-900 leading-relaxed"><strong>Perhatian:</strong> Aplikasi ini masih dalam tahap pengembangan (Beta) sebagai proyek pembelajaran (Prototype) dan jauh dari kata sempurna. Pengguna disarankan untuk tetap melakukan validasi silang pada hasil perhitungan sebelum digunakan untuk keperluan resmi.</p>
+            </div>
+            <div class="text-center pt-4 border-t border-gray-200">
+              <p class="text-xs text-gray-500 font-medium">SmartVerify v1.0 © 2026 • Bersama Menuju Digitalisasi Mutu Laboratorium</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <button id="dilution-fab" class="dilution-fab" title="Kalkulator Pengenceran (V1×M1=V2×M2)"><i data-lucide="droplet" class="w-7 h-7"></i></button>
+  <div id="dilution-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-lg font-bold text-gray-800">Kalkulator Pengenceran & Generator Resep</h2><button id="dilution-close" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">×</button>
+      </div>
+      <div class="space-y-3 mb-5">
+        <div><label class="text-xs font-semibold text-gray-600" for="dil-m1">Konsentrasi Awal/Induk (M1) mg/L</label><input type="number" id="dil-m1" step="any" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+        <div><label class="text-xs font-semibold text-gray-600" for="dil-m2">Titik Deret Konsentrasi Target (M2) [Pisahkan dengan koma]</label><input type="text" id="dil-m2" placeholder="0.2, 0.5, 1.0, 1.5, 2.0" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+        <div><label class="text-xs font-semibold text-gray-600" for="dil-v2">Volume Labu Ukur (V2) mL</label><input type="number" id="dil-v2" step="any" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+      </div>
+      <div class="flex gap-2 mb-5">
+        <button id="dil-calc-single" class="flex-1 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Hitung Tunggal</button>
+        <button id="dil-calc-recipe" class="flex-1 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700">Buat Resep</button>
+      </div>
+      <div id="dil-single-result" class="hidden mb-5 p-4 bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-400 rounded-xl text-center">
+        <p class="text-xs font-semibold text-green-700 uppercase">Volume Pipet (V1)</p><p id="dil-result" class="text-2xl font-bold text-green-600 mt-1">-</p><p class="text-xs text-green-600">mL</p>
+      </div>
+      <p id="dil-sop" class="hidden mb-5 text-xs bg-amber-50 border-l-4 border-amber-400 rounded p-3 text-amber-800 leading-relaxed"></p>
+      <div id="dil-recipe-container" class="hidden mb-5">
+        <h3 class="text-sm font-bold text-gray-800 mb-3">Resep Preparasi Deret Standar</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border border-gray-300">
+            <thead class="bg-gradient-to-r from-teal-50 to-cyan-50"><tr><th class="border border-gray-300 px-3 py-2 text-left">Target (mg/L)</th><th class="border border-gray-300 px-3 py-2 text-left">Volume Pipet</th><th class="border border-gray-300 px-3 py-2 text-left">Volume Labu</th><th class="border border-gray-300 px-3 py-2 text-left">Instruksi Cepat</th></tr></thead>
+            <tbody id="dil-recipe-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="flex gap-2"><button id="dilution-close-btn" class="flex-1 py-2 bg-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-300">Tutup</button><button id="dilution-reset" class="flex-1 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700">Reset</button></div>
+    </div>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+      <button id="modal-close" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 class="text-xl font-bold mb-5">Buat/Edit Proyek</h3>
+      <form id="project-form" class="space-y-4">
+        <div><label class="text-sm font-medium">Nama Proyek</label><input type="text" id="pf-name" class="w-full border rounded-lg px-3 py-2 mt-1" required></div>
+        <div><label class="text-sm font-medium">Nama Analis 1</label><input type="text" id="pf-analis1" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+        <div><label class="text-sm font-medium">Nama Analis 2</label><input type="text" id="pf-analis2" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+        <div><label class="text-sm font-medium">Jenis Sampel</label>
+          <select id="pf-jenis-sampel" class="w-full border rounded-lg px-3 py-2 mt-1">
+            <option value="">-- Pilih --</option><option value="Air Sungai">Air Sungai</option><option value="Air Minum">Air Minum</option><option value="Air Higiene Sanitasi">Air Higiene Sanitasi</option><option value="Air Limbah">Air Limbah</option>
+          </select>
+        </div>
+        <div id="limbah-subtype-wrapper" class="hidden"><label class="text-sm font-medium">Jenis Air Limbah</label>
+          <select id="pf-limbah-subtype" class="w-full border rounded-lg px-3 py-2 mt-1">
+            <option value="">-- Pilih --</option><option value="Rumah Sakit">Rumah Sakit</option><option value="Domestik">Domestik</option><option value="Industri">Industri</option>
+          </select>
+        </div>
+        <div><label class="text-sm font-medium">Logam/Parameter Uji</label>
+          <select id="pf-logam" class="w-full border rounded-lg px-3 py-2 mt-1">
+            <option value="Tembaga (Cu)">Tembaga (Cu)</option><option value="Besi (Fe)">Besi (Fe)</option><option value="Mangan (Mn)">Mangan (Mn)</option><option value="Zinc (Zn)">Zinc (Zn)</option><option value="Kadmium (Cd)">Kadmium (Cd)</option><option value="Timbal (Pb)">Timbal (Pb)</option><option value="Krom (Cr)">Krom (Cr)</option><option value="Nikel (Ni)">Nikel (Ni)</option>
+          </select>
+        </div>
+        <div><label class="text-sm font-medium">Tanggal & Waktu</label><input type="datetime-local" id="pf-date" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+        <div class="flex gap-3 pt-2"><button type="button" id="modal-cancel" class="flex-1 px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50">Batal</button><button type="submit" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700">Simpan</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="delete-modal" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+      <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center"><i data-lucide="trash-2" class="w-7 h-7 text-red-500"></i></div>
+      <h3 class="text-lg font-bold text-gray-800 mb-2">Hapus Proyek?</h3>
+      <p id="delete-msg" class="text-sm text-gray-500 mb-5"></p>
+      <div class="flex gap-3"><button id="del-cancel" class="flex-1 px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50">Batal</button><button id="del-confirm" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600">Hapus</button></div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+      <div id="confirm-icon-slot"></div>
+      <h3 id="confirm-title" class="text-lg font-bold text-gray-800 mb-2">Konfirmasi Penyimpanan</h3>
+      <p id="confirm-msg" class="text-sm text-gray-600 mb-5"></p>
+      <div id="confirm-buttons" class="flex gap-3"><button id="conf-no" class="flex-1 px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50">Tidak</button><button id="conf-yes" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700">Ya</button></div>
+    </div>
+  </div>
+
+<script>
+// ==========================================
+// CORE JAVASCRIPT APLIKASI
+// ==========================================
+(function() {
+"use strict";
+
+// --- STATE ---
+var userName = localStorage.getItem('sni_username') || '';
+var projects = JSON.parse(localStorage.getItem('sni_projects') || '[]');
+var activeProject = null;
+var sidebarOpen = true;
+var editingProjectId = null;
+var deletingProjectId = null;
+var pendingProjectData = null;
+var isEditingProject = false;
+var linChart = null;
+
+// --- DOM REFS ---
+var sidebar = document.getElementById('sidebar');
+var hamburger = document.getElementById('hamburger-btn');
+var modal = document.getElementById('modal-overlay');
+var deleteModal = document.getElementById('delete-modal');
+var confirmModal = document.getElementById('confirm-modal');
+var projectIndicator = document.getElementById('project-indicator');
+var headerBadge = document.getElementById('header-status-badge');
+var btnPDF = document.getElementById('btn-export-pdf');
+
+// --- EXCEL GRID INTERACTION (EVENT DELEGATION) ---
+var activeColumn = null; 
+var selectionStartRow = null; 
+
+function setupExcelGrid(tableId) {
+  var table = document.getElementById(tableId);
+  if (!table) return;
+  var tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  var rows = tbody.querySelectorAll('tr');
+  rows.forEach(function(row, rowIdx) {
+    var inputs = row.querySelectorAll('input[type="number"], input[type="text"]');
+    inputs.forEach(function(input, colIdx) {
+      input.setAttribute('data-row', rowIdx);
+      input.setAttribute('data-col', colIdx);
+    });
+  });
+}
+
+function clearSelection() {
+  document.querySelectorAll('.excel-grid input.selected').forEach(function(inp) { inp.classList.remove('selected'); });
+  activeColumn = null;
+  selectionStartRow = null;
+}
+
+document.addEventListener('mousedown', function(e) {
+  if (!e.target.closest('.excel-grid input')) return;
+  var input = e.target.closest('.excel-grid input');
+  if (!input) return;
+  if (e.button !== 0) return;
+  clearSelection();
+  var col = input.getAttribute('data-col');
+  var row = input.getAttribute('data-row');
+  activeColumn = col;
+  selectionStartRow = row;
+  input.classList.add('selected');
+});
+
+document.addEventListener('mouseover', function(e) {
+  if (!e.target.closest('.excel-grid input')) return;
+  var input = e.target.closest('.excel-grid input');
+  if (!input || e.buttons !== 1) return;
+  var col = input.getAttribute('data-col');
+  if (col !== activeColumn) return;
+  input.classList.add('selected');
+});
+
+document.addEventListener('keydown', function(e) {
+  if (!e.target.closest('.excel-grid input')) return;
+  var input = e.target.closest('.excel-grid input');
+  if (!input) return;
+  var key = e.key;
+  if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
+  e.preventDefault();
+  var currentRow = parseInt(input.getAttribute('data-row'));
+  var currentCol = parseInt(input.getAttribute('data-col'));
+  var targetInput = null;
+  if (key === 'ArrowDown') targetInput = document.querySelector('input[data-row="' + (currentRow + 1) + '"][data-col="' + currentCol + '"]');
+  else if (key === 'ArrowUp') targetInput = document.querySelector('input[data-row="' + (currentRow - 1) + '"][data-col="' + currentCol + '"]');
+  else if (key === 'ArrowRight') targetInput = document.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol + 1) + '"]');
+  else if (key === 'ArrowLeft') targetInput = document.querySelector('input[data-row="' + currentRow + '"][data-col="' + (currentCol - 1) + '"]');
+  if (targetInput) targetInput.focus();
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.excel-grid input')) return;
+  var input = e.target.closest('.excel-grid input');
+  if (!input || !e.shiftKey || activeColumn === null) return;
+  var col = input.getAttribute('data-col');
+  var row = parseInt(input.getAttribute('data-row'));
+  var startRow = parseInt(selectionStartRow);
+  if (col !== activeColumn) return;
+  var minRow = Math.min(startRow, row);
+  var maxRow = Math.max(startRow, row);
+  var currentTable = input.closest('.excel-grid');
+  var tbody = currentTable.querySelector('tbody');
+  var rows = tbody.querySelectorAll('tr');
+  rows.forEach(function(rowEl, rowIdx) {
+    var inputs = rowEl.querySelectorAll('input');
+    inputs.forEach(function(inp) {
+      var inpCol = inp.getAttribute('data-col');
+      var inpRow = parseInt(inp.getAttribute('data-row'));
+      if (inpCol === col && inpRow >= minRow && inpRow <= maxRow) {
+        inp.classList.add('selected');
+      }
+    });
+  });
+});
+
+document.addEventListener('paste', function(e) {
+  if (!e.target.closest('.excel-grid input')) return;
+  var input = e.target.closest('.excel-grid input');
+  if (!input) return;
+  var pasteData = (e.clipboardData || window.clipboardData).getData('text');
+  if (!pasteData) return;
+  e.preventDefault();
+  var startRow = parseInt(input.getAttribute('data-row'));
+  var startCol = parseInt(input.getAttribute('data-col'));
+  var currentTable = input.closest('.excel-grid');
+  var tbody = currentTable.querySelector('tbody');
+  var rows = tbody.querySelectorAll('tr');
+  var lines = pasteData.split(/\r?\n/).filter(function(line) { return line.trim(); });
+  lines.forEach(function(line, lineIdx) {
+    var rowIdx = startRow + lineIdx;
+    if (rowIdx >= rows.length) return;
+    var cells = line.split('\t');
+    var rowEl = rows[rowIdx];
+    var inputs = rowEl.querySelectorAll('input');
+    cells.forEach(function(cell, cellIdx) {
+      var colIdx = startCol + cellIdx;
+      if (colIdx >= inputs.length) return;
+      inputs[colIdx].value = cell.trim();
+    });
+  });
+  saveProjectData();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return;
+  var selectedInputs = Array.from(document.querySelectorAll('input.selected'));
+  if (selectedInputs.length === 0) return;
+  e.preventDefault();
+  var rowData = {};
+  selectedInputs.forEach(function(input) {
+    var row = input.getAttribute('data-row');
+    if (!rowData[row]) rowData[row] = [];
+    rowData[row].push(input.value);
+  });
+  var copyString = Object.values(rowData).map(function(cols) { return cols.join('\t'); }).join('\n');
+  navigator.clipboard.writeText(copyString).catch(function() {});
+});
+
+// --- NAVIGATION ---
+var allPages = document.querySelectorAll('.page-content');
+var allSidebarItems = document.querySelectorAll('.sidebar-item');
+
+function navigateTo(pageName) {
+  allSidebarItems.forEach(function(i) { i.classList.remove('active'); });
+  var activeItem = document.querySelector('[data-page="' + pageName + '"]');
+  if (activeItem) activeItem.classList.add('active');
+  allPages.forEach(function(p) { p.classList.add('hidden'); });
+  var target = document.getElementById('page-' + pageName);
+  if (target) target.classList.remove('hidden');
+  if (pageName === 'profil') document.getElementById('profil-name').value = userName;
+  if (pageName === 'home') renderHome();
+  updateFormDisabledState();
+  if (window.innerWidth < 768) { sidebarOpen = false; sidebar.classList.add('collapsed'); }
+}
+
+allSidebarItems.forEach(function(item) {
+  item.addEventListener('click', function() { navigateTo(item.dataset.page); });
+});
+
+hamburger.addEventListener('click', function() {
+  sidebarOpen = !sidebarOpen;
+  sidebar.classList.toggle('collapsed', !sidebarOpen);
+});
+if (window.innerWidth < 768) { sidebarOpen = false; sidebar.classList.add('collapsed'); }
+
+// --- DILUTION CALCULATOR ---
+var dilOverlay = document.getElementById('dilution-overlay');
+document.getElementById('dilution-fab').addEventListener('click', function() { dilOverlay.classList.remove('hidden'); });
+document.getElementById('dilution-close').addEventListener('click', function() { dilOverlay.classList.add('hidden'); });
+document.getElementById('dilution-close-btn').addEventListener('click', function() { dilOverlay.classList.add('hidden'); });
+dilOverlay.addEventListener('click', function(e) { if (e.target === dilOverlay) dilOverlay.classList.add('hidden'); });
+document.getElementById('dilution-reset').addEventListener('click', function() {
+  document.getElementById('dil-m1').value = '';
+  document.getElementById('dil-m2').value = '';
+  document.getElementById('dil-v2').value = '';
+  document.getElementById('dil-result').textContent = '-';
+  document.getElementById('dil-sop').classList.add('hidden');
+  document.getElementById('dil-single-result').classList.add('hidden');
+  document.getElementById('dil-recipe-container').classList.add('hidden');
+});
+
+function calcDilutionSingle() {
+  var m1 = parseFloat(document.getElementById('dil-m1').value);
+  var m2 = parseFloat(document.getElementById('dil-m2').value);
+  var v2 = parseFloat(document.getElementById('dil-v2').value);
+  if (isNaN(m1) || isNaN(m2) || isNaN(v2) || m1 === 0) {
+    document.getElementById('dil-result').textContent = '-';
+    document.getElementById('dil-sop').classList.add('hidden');
+    document.getElementById('dil-single-result').classList.add('hidden');
+    return;
+  }
+  var v1 = (v2 * m2) / m1;
+  document.getElementById('dil-result').textContent = v1.toFixed(4);
+  var sop = document.getElementById('dil-sop');
+  sop.innerHTML = 'Pipet <strong>' + v1.toFixed(4) + ' mL</strong> larutan standar, masukkan ke labu ukur <strong>' + v2 + ' mL</strong>, tepatkan hingga tanda batas.';
+  document.getElementById('dil-single-result').classList.remove('hidden');
+  document.getElementById('dil-sop').classList.remove('hidden');
+  document.getElementById('dil-recipe-container').classList.add('hidden');
+}
+
+function formatNum(val) {
+  var rounded = parseFloat(val.toFixed(2));
+  return rounded % 1 === 0 ? Math.trunc(rounded).toString() : rounded.toString();
+}
+
+function calcDilutionRecipe() {
+  var m1 = parseFloat(document.getElementById('dil-m1').value);
+  var m2Str = document.getElementById('dil-m2').value.trim();
+  var v2 = parseFloat(document.getElementById('dil-v2').value);
+  if (isNaN(m1) || isNaN(v2) || m1 === 0 || !m2Str) { alert('Isi semua field terlebih dahulu'); return; }
+  var m2Array = m2Str.split(',').map(function(s) { return parseFloat(s.trim()); }).filter(function(v) { return !isNaN(v); });
+  if (m2Array.length === 0) { alert('Format tidak valid. Gunakan koma untuk pemisah.'); return; }
+  var tbody = document.getElementById('dil-recipe-body');
+  tbody.innerHTML = '';
+  m2Array.forEach(function(m2) {
+    var v1 = (v2 * m2) / m1;
+    var m2Fmt = formatNum(m2); var v1Fmt = formatNum(v1); var v2Fmt = formatNum(v2);
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="border border-gray-300 px-3 py-2">' + m2Fmt + '</td>' +
+                   '<td class="border border-gray-300 px-3 py-2">' + v1Fmt + ' mL</td>' +
+                   '<td class="border border-gray-300 px-3 py-2">' + v2Fmt + ' mL</td>' +
+                   '<td class="border border-gray-300 px-3 py-2 text-xs">Pipet ' + v1Fmt + ' mL, masukkan ke labu ' + v2Fmt + ' mL, tepatkan dengan pelarut.</td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('dil-recipe-container').classList.remove('hidden');
+  document.getElementById('dil-single-result').classList.add('hidden');
+  document.getElementById('dil-sop').classList.add('hidden');
+}
+
+document.getElementById('dil-calc-single').addEventListener('click', calcDilutionSingle);
+document.getElementById('dil-calc-recipe').addEventListener('click', calcDilutionRecipe);
+
+// --- GREETING ---
+function updateGreeting() {
+  var h = new Date().getHours();
+  var g = 'Selamat Pagi';
+  if (h >= 11 && h < 15) g = 'Selamat Siang';
+  else if (h >= 15 && h < 19) g = 'Selamat Sore';
+  else if (h >= 19 || h < 5) g = 'Selamat Malam';
+  document.getElementById('greeting-text').textContent = g + ', ' + (userName || 'Analis') + '! 👋';
+}
+
+document.getElementById('profil-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var val = document.getElementById('profil-name').value.trim();
+  if (!val) return;
+  userName = val;
+  localStorage.setItem('sni_username', userName);
+  updateGreeting();
+  var msg = document.getElementById('profil-message');
+  msg.textContent = '✓ Profil berhasil disimpan!';
+  msg.className = 'bg-green-100 border border-green-300 text-green-800 rounded-lg p-3 text-sm font-medium';
+  msg.classList.remove('hidden');
+  setTimeout(function() { msg.classList.add('hidden'); }, 3000);
+});
+document.getElementById('profil-cancel').addEventListener('click', function() {
+  document.getElementById('profil-name').value = userName;
+  document.getElementById('profil-message').classList.add('hidden');
+});
+
+// --- PROJECT MANAGEMENT ---
+function getOverallStatus(proj) {
+  var r = proj.results || {};
+  if (r.lin && r.pres && r.akur && r.repro && r.mdl) return 'pass';
+  if (r.lin === false || r.pres === false || r.akur === false || r.repro === false || r.mdl === false) return 'fail';
+  return 'pending';
+}
+
+function updateFormDisabledState() {
+  var hasProject = !!activeProject;
+  ['lin', 'pres', 'akur', 'repro', 'mdl'].forEach(function(page) {
+    var msg = document.getElementById(page + '-no-project-msg');
+    if (msg) { if (hasProject) msg.classList.add('hidden'); else msg.classList.remove('hidden'); }
+  });
+}
+
+function saveProjects() {
+  localStorage.setItem('sni_projects', JSON.stringify(projects));
+  renderHome();
+}
+
+function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function renderHome() {
+  updateGreeting();
+  var total = projects.length, verified = 0;
+  projects.forEach(function(p) { if (getOverallStatus(p) === 'pass') verified++; });
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-verified').textContent = verified;
+  document.getElementById('stat-pending').textContent = total - verified;
+
+  var tableWrapper = document.getElementById('projects-table-wrapper');
+  var tableBody = document.getElementById('project-table-body');
+
+  if (total === 0) {
+    document.getElementById('empty-state').classList.remove('hidden');
+    tableWrapper.classList.add('hidden');
+    return;
+  }
+  document.getElementById('empty-state').classList.add('hidden');
+  tableWrapper.classList.remove('hidden');
+  tableBody.innerHTML = '';
+
+  projects.forEach(function(p) {
+    var s = getOverallStatus(p);
+    var badge = '';
+    if (s === 'pass') badge = '<span class="inline-block px-3 py-1 rounded-full text-xs font-bold badge-pass">✓ Terverifikasi</span>';
+    else if (s === 'fail') badge = '<span class="inline-block px-3 py-1 rounded-full text-xs font-bold badge-fail">✗ Tidak Memenuhi</span>';
+    else badge = '<span class="inline-block px-3 py-1 rounded-full text-xs font-bold badge-pending">⏳ Belum Lengkap</span>';
+    var dateStr = p.date ? new Date(p.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+    var tr = document.createElement('tr');
+    tr.className = 'hover:bg-teal-50 transition-colors cursor-pointer';
+    tr.innerHTML = '<td class="px-6 py-4 font-medium text-gray-800">' + escHtml(p.name) + '</td><td class="px-6 py-4 text-gray-600 text-sm">' + dateStr + '</td><td class="px-6 py-4 text-gray-600 text-sm">' + escHtml(p.logam) + '</td><td class="px-6 py-4 text-gray-600 text-sm">' + escHtml((p.analis1 || '-') + ' / ' + (p.analis2 || '-')) + '</td><td class="px-6 py-4 text-center">' + badge + '</td><td class="px-6 py-4 text-center relative"><button class="p-2 rounded-lg hover:bg-gray-200 act-trigger" data-id="' + p.id + '"><i data-lucide="more-vertical" class="w-4 h-4 text-gray-600"></i></button><div class="action-dropdown hidden"></div></td>';
+
+    var trigger = tr.querySelector('.act-trigger');
+    var dropdown = tr.querySelector('.action-dropdown');
+    dropdown.innerHTML = '<button data-act="open">Buka</button><button data-act="edit">Edit</button><button data-act="csv">Export CSV</button><button data-act="delete" class="text-red-600">Hapus</button>';
+    trigger.addEventListener('click', function(ev) { ev.stopPropagation(); document.querySelectorAll('.action-dropdown').forEach(function(d) { d.classList.add('hidden'); }); dropdown.classList.toggle('hidden'); });
+    dropdown.querySelectorAll('button').forEach(function(btn) {
+      btn.addEventListener('click', function(ev) {
+        ev.stopPropagation(); dropdown.classList.add('hidden');
+        var act = btn.dataset.act;
+        if (act === 'open') openProject(p.id);
+        else if (act === 'edit') openModal(p.id);
+        else if (act === 'csv') exportProjectCSV(p);
+        else if (act === 'delete') { deletingProjectId = p.id; document.getElementById('delete-msg').textContent = 'Proyek "' + p.name + '" akan dihapus permanen.'; deleteModal.classList.remove('hidden'); }
+      });
+    });
+    tr.addEventListener('click', function(ev) { if (!ev.target.closest('button') && !ev.target.closest('.action-dropdown')) openProject(p.id); });
+    tableBody.appendChild(tr);
+  });
+  lucide.createIcons();
+}
+document.addEventListener('click', function() { document.querySelectorAll('.action-dropdown').forEach(function(d) { d.classList.add('hidden'); }); });
+
+// --- MODAL ---
+function openModal(editId) {
+  editingProjectId = editId || null;
+  document.getElementById('project-form').reset();
+  document.getElementById('limbah-subtype-wrapper').classList.add('hidden');
+  if (editId) {
+    var p = projects.find(function(x) { return x.id === editId; });
+    if (p) {
+      document.getElementById('pf-name').value = p.name || '';
+      document.getElementById('pf-analis1').value = p.analis1 || '';
+      document.getElementById('pf-analis2').value = p.analis2 || '';
+      document.getElementById('pf-jenis-sampel').value = p.jenisSampel || '';
+      if (p.jenisSampel === 'Air Limbah') { document.getElementById('limbah-subtype-wrapper').classList.remove('hidden'); document.getElementById('pf-limbah-subtype').value = p.limbahSubtype || ''; }
+      document.getElementById('pf-logam').value = p.logam || 'Tembaga (Cu)';
+      document.getElementById('pf-date').value = p.date || '';
+    }
+  } else {
+    document.getElementById('pf-date').value = new Date().toISOString().slice(0, 16);
+  }
+  modal.classList.remove('hidden');
+}
+document.getElementById('btn-new-project').addEventListener('click', function() { openModal(null); });
+document.getElementById('modal-close').addEventListener('click', function() { modal.classList.add('hidden'); });
+document.getElementById('modal-cancel').addEventListener('click', function() { modal.classList.add('hidden'); });
+modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.add('hidden'); });
+document.getElementById('pf-jenis-sampel').addEventListener('change', function(e) {
+  if (e.target.value === 'Air Limbah') document.getElementById('limbah-subtype-wrapper').classList.remove('hidden');
+  else { document.getElementById('limbah-subtype-wrapper').classList.add('hidden'); document.getElementById('pf-limbah-subtype').value = ''; }
+});
+
+document.getElementById('project-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var data = { name: document.getElementById('pf-name').value, analis1: document.getElementById('pf-analis1').value, analis2: document.getElementById('pf-analis2').value, jenisSampel: document.getElementById('pf-jenis-sampel').value, limbahSubtype: document.getElementById('pf-limbah-subtype').value || '', logam: document.getElementById('pf-logam').value, date: document.getElementById('pf-date').value };
+  pendingProjectData = data;
+  isEditingProject = !!editingProjectId;
+  document.getElementById('confirm-msg').textContent = 'Apakah Anda yakin ingin ' + (isEditingProject ? 'memperbarui' : 'membuat') + ' proyek "' + data.name + '"?';
+  document.getElementById('confirm-title').textContent = 'Konfirmasi Penyimpanan';
+  document.getElementById('confirm-icon-slot').innerHTML = '';
+  document.getElementById('confirm-buttons').classList.remove('hidden');
+  confirmModal.classList.remove('hidden');
+});
+
+// Delete
+document.getElementById('del-cancel').addEventListener('click', function() { deleteModal.classList.add('hidden'); deletingProjectId = null; });
+document.getElementById('del-confirm').addEventListener('click', function() {
+  if (deletingProjectId) {
+    projects = projects.filter(function(x) { return x.id !== deletingProjectId; });
+    if (activeProject && activeProject.id === deletingProjectId) { activeProject = null; projectIndicator.classList.add('hidden'); headerBadge.classList.add('hidden'); btnPDF.classList.add('hidden'); }
+    saveProjects();
+  }
+  deleteModal.classList.add('hidden'); deletingProjectId = null;
+});
+
+// Confirm
+function showConfirmIcon(type) {
+  var slot = document.getElementById('confirm-icon-slot');
+  slot.innerHTML = '<div class="confirm-icon ' + type + '">' + (type === 'success' ? '✓' : '✕') + '</div>';
+}
+document.getElementById('conf-no').addEventListener('click', function() {
+  showConfirmIcon('error');
+  document.getElementById('confirm-title').textContent = 'Data tidak tersimpan';
+  document.getElementById('confirm-msg').textContent = '';
+  document.getElementById('confirm-buttons').classList.add('hidden');
+  setTimeout(function() { confirmModal.classList.add('hidden'); pendingProjectData = null; isEditingProject = false; document.getElementById('confirm-icon-slot').innerHTML = ''; document.getElementById('confirm-buttons').classList.remove('hidden'); }, 800);
+});
+document.getElementById('conf-yes').addEventListener('click', function() {
+  showConfirmIcon('success');
+  document.getElementById('confirm-title').textContent = 'Data sudah tersimpan';
+  document.getElementById('confirm-msg').textContent = '';
+  document.getElementById('confirm-buttons').classList.add('hidden');
+  setTimeout(function() {
+    confirmModal.classList.add('hidden');
+    if (pendingProjectData) {
+      if (isEditingProject && editingProjectId) {
+        var idx = projects.findIndex(function(p) { return p.id === editingProjectId; });
+        if (idx >= 0) Object.assign(projects[idx], pendingProjectData);
+        if (activeProject && activeProject.id === editingProjectId) Object.assign(activeProject, pendingProjectData);
+      } else {
+        var proj = Object.assign({ id: Date.now().toString(), data: {}, results: {} }, pendingProjectData);
+        projects.push(proj);
+      }
+      saveProjects();
+      if (!isEditingProject) openProject(projects[projects.length - 1].id);
+    }
+    pendingProjectData = null; isEditingProject = false; modal.classList.add('hidden');
+    document.getElementById('confirm-icon-slot').innerHTML = '';
+    document.getElementById('confirm-buttons').classList.remove('hidden');
+  }, 800);
+});
+
+// --- OPEN PROJECT ---
+function openProject(id) {
+  activeProject = projects.find(function(p) { return p.id === id; });
+  if (!activeProject) return;
+  if (!activeProject.results) activeProject.results = {};
+  projectIndicator.textContent = '📁 ' + activeProject.name;
+  projectIndicator.classList.remove('hidden');
+  var s = getOverallStatus(activeProject);
+  headerBadge.classList.remove('hidden', 'badge-pass', 'badge-fail', 'badge-pending');
+  if (s === 'pass') { headerBadge.textContent = '✓ TERVERIFIKASI'; headerBadge.classList.add('badge-pass'); }
+  else if (s === 'fail') { headerBadge.textContent = '✗ TIDAK MEMENUHI'; headerBadge.classList.add('badge-fail'); }
+  else { headerBadge.textContent = '⏳ BELUM LENGKAP'; headerBadge.classList.add('badge-pending'); }
+  btnPDF.classList.remove('hidden');
+  navigateTo('linearitas');
+  loadProjectData();
+  setTimeout(autoCalculateAll, 150);
+}
+
+function loadProjectData() {
+  if (!activeProject) return;
+  var d = activeProject.data || {};
+  if (d.lin) setLinData(d.lin); else initLinTable(5);
+  if (d.pres) setTableData('pres-table', d.pres); else initSimpleTable('pres-table', 7);
+  if (d.akur) setTableData('akur-table', d.akur); else initSimpleTable('akur-table', 7);
+  if (d.reproA) setTableData('repro-a-table', d.reproA); else initSimpleTable('repro-a-table', 7);
+  if (d.reproB) setTableData('repro-b-table', d.reproB); else initSimpleTable('repro-b-table', 7);
+  if (d.mdl) setTableData('mdl-table', d.mdl); else initSimpleTable('mdl-table', 7);
+  
+  if (d.akurCs) document.getElementById('akur-csampel').value = d.akurCs; else document.getElementById('akur-csampel').value = '';
+  if (d.akurCsp) document.getElementById('akur-cspike').value = d.akurCsp; else document.getElementById('akur-cspike').value = '';
+  if (d.mdlCs) document.getElementById('mdl-csampel').value = d.mdlCs; else document.getElementById('mdl-csampel').value = '';
+  if (d.mdlCsp) document.getElementById('mdl-cspike').value = d.mdlCsp; else document.getElementById('mdl-cspike').value = '';
+  if (d.mdlBaku) document.getElementById('mdl-baku-mutu').value = d.mdlBaku; else document.getElementById('mdl-baku-mutu').value = '';
+  
+  document.getElementById('repro-a-label').textContent = (activeProject.analis1 || 'Analis A') + ' (7 data, mg/L):';
+  document.getElementById('repro-b-label').textContent = (activeProject.analis2 || 'Analis B') + ' (7 data, mg/L):';
+  ['lin-result', 'pres-result', 'akur-result', 'repro-result', 'mdl-result', 'mdl-acceptance-table'].forEach(function(id) { document.getElementById(id).classList.add('hidden'); });
+  document.getElementById('lin-chart-container').classList.add('hidden');
+  
+  setupExcelGrid('lin-table'); setupExcelGrid('pres-table'); setupExcelGrid('akur-table');
+  setupExcelGrid('repro-a-table'); setupExcelGrid('repro-b-table'); setupExcelGrid('mdl-table');
+}
+
+function saveProjectData() {
+  if (!activeProject) return;
+  activeProject.data = {
+    lin: getLinData(), pres: getTableData('pres-table'), akur: getTableData('akur-table'),
+    reproA: getTableData('repro-a-table'), reproB: getTableData('repro-b-table'), mdl: getTableData('mdl-table'),
+    akurCs: document.getElementById('akur-csampel').value, akurCsp: document.getElementById('akur-cspike').value,
+    mdlCs: document.getElementById('mdl-csampel').value, mdlCsp: document.getElementById('mdl-cspike').value,
+    mdlBaku: document.getElementById('mdl-baku-mutu').value
+  };
+  var idx = projects.findIndex(function(p) { return p.id === activeProject.id; });
+  if (idx >= 0) projects[idx] = activeProject;
+  localStorage.setItem('sni_projects', JSON.stringify(projects));
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target.closest('.excel-grid') || e.target.id === 'akur-csampel' || e.target.id === 'akur-cspike' || e.target.id === 'mdl-csampel' || e.target.id === 'mdl-cspike' || e.target.id === 'mdl-baku-mutu') saveProjectData();
+});
+
+// --- TABLE HELPERS ---
+function initLinTable(n) {
+  var t = document.getElementById('lin-table'); t.innerHTML = '';
+  for (var i = 1; i <= n; i++) t.innerHTML += '<tr><td class="p-2 text-center text-sm text-gray-500">' + i + '</td><td class="p-2"><input type="number" step="any"></td><td class="p-2"><input type="number" step="any"></td><td class="p-1"><button class="del-row-btn text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td></tr>';
+  setupExcelGrid('lin-table');
+}
+function initSimpleTable(id, n) {
+  var t = document.getElementById(id); t.innerHTML = '';
+  for (var i = 1; i <= n; i++) t.innerHTML += '<tr><td class="p-2 text-center text-sm text-gray-500">' + i + '</td><td class="p-2"><input type="number" step="any"></td><td class="p-2"><input type="number" step="any"></td></tr>';
+  setupExcelGrid(id);
+}
+function setLinData(arr) {
+  var t = document.getElementById('lin-table'); t.innerHTML = '';
+  arr.forEach(function(r, i) { t.innerHTML += '<tr><td class="p-2 text-center text-sm text-gray-500">' + (i + 1) + '</td><td class="p-2"><input type="number" step="any" value="' + (r[0] || '') + '"></td><td class="p-2"><input type="number" step="any" value="' + (r[1] || '') + '"></td><td class="p-1"><button class="del-row-btn text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td></tr>'; });
+  setupExcelGrid('lin-table');
+}
+function getLinData() {
+  return Array.from(document.getElementById('lin-table').querySelectorAll('tr')).map(function(r) { var ins = r.querySelectorAll('input'); return [ins[0] ? ins[0].value : '', ins[1] ? ins[1].value : '']; });
+}
+function setTableData(id, arr) {
+  var t = document.getElementById(id); t.innerHTML = '';
+  arr.forEach(function(v, i) { t.innerHTML += '<tr><td class="p-2 text-center text-sm text-gray-500">' + (i + 1) + '</td><td class="p-2"><input type="number" step="any" value="' + (v[0] || '') + '"></td><td class="p-2"><input type="number" step="any" value="' + (v[1] || '') + '"></td></tr>'; });
+  setupExcelGrid(id);
+}
+function getTableData(id) {
+  var inputs = document.getElementById(id).querySelectorAll('input');
+  var result = [];
+  for (var i = 0; i < inputs.length; i += 2) { result.push([inputs[i] ? inputs[i].value : '', inputs[i + 1] ? inputs[i + 1].value : '']); }
+  return result;
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.classList.contains('del-row-btn')) return;
+  var row = e.target.closest('tr');
+  if (!row) return;
+  row.remove();
+  saveProjectData();
+});
+
+document.getElementById('btn-add-lin-row').addEventListener('click', function() {
+  var t = document.getElementById('lin-table');
+  var n = t.querySelectorAll('tr').length + 1;
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td class="p-2 text-center text-sm text-gray-500">' + n + '</td><td class="p-2"><input type="number" step="any"></td><td class="p-2"><input type="number" step="any"></td><td class="p-1"><button class="del-row-btn text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td>';
+  t.appendChild(tr);
+  setupExcelGrid('lin-table');
+});
+
+// --- CALCULATIONS ---
+function mean(a) { return a.reduce(function(s, v) { return s + v; }, 0) / a.length; }
+function sd(a) { var m = mean(a); return Math.sqrt(a.reduce(function(s, v) { return s + Math.pow(v - m, 2); }, 0) / (a.length - 1)); }
+function cvH(c) { return Math.pow(2, 1 - 0.5 * Math.log10(c / 1000000)); }
+function badgeHtml(pass, t, f) { return '<span class="inline-block px-3 py-1 rounded-full text-sm font-bold ' + (pass ? 'badge-pass' : 'badge-fail') + '">' + (pass ? (t || 'Memenuhi Syarat') : (f || 'Tidak Memenuhi')) + '</span>'; }
+function showErr(id, m) { var el = document.getElementById(id); el.innerHTML = '<p class="text-red-600 font-semibold">⚠️ ' + m + '</p>'; el.classList.remove('hidden'); }
+
+function calcLinearitas() {
+  var rows = document.getElementById('lin-table').querySelectorAll('tr');
+  var x = [], y = [];
+  for (var i = 0; i < rows.length; i++) {
+    var ins = rows[i].querySelectorAll('input');
+    if (!ins[0].value || !ins[1].value) { showErr('lin-result', 'Semua field harus diisi'); return; }
+    x.push(parseFloat(ins[0].value)); y.push(parseFloat(ins[1].value));
+  }
+  if (x.length < 3) { showErr('lin-result', 'Minimal 3 data'); return; }
+  var n = x.length, sx = 0, sy = 0, sxy = 0, sx2 = 0, sy2 = 0;
+  for (var j = 0; j < n; j++) { sx += x[j]; sy += y[j]; sxy += x[j] * y[j]; sx2 += x[j] * x[j]; sy2 += y[j] * y[j]; }
+  var slope = (n * sxy - sx * sy) / (n * sx2 - sx * sx);
+  var intercept = (sy - slope * sx) / n;
+  var r = (n * sxy - sx * sy) / Math.sqrt((n * sx2 - sx * sx) * (n * sy2 - sy * sy));
+  var pass = Math.abs(r) >= 0.995;
+  if (activeProject) { activeProject.results.lin = pass; saveProjects(); }
+  
+  document.getElementById('lin-result').innerHTML = '<p><strong>Persamaan:</strong> y = ' + slope.toFixed(6) + 'x + ' + intercept.toFixed(6) + '</p><p><strong>Koefisien Korelasi (r):</strong> ' + r.toFixed(6) + '</p><p><strong>Syarat:</strong> r ≥ 0,995 → ' + badgeHtml(pass) + '</p>';
+  document.getElementById('lin-result').classList.remove('hidden');
+  document.getElementById('lin-eq-text').textContent = 'y = ' + slope.toFixed(4) + 'x + ' + intercept.toFixed(4);
+  document.getElementById('lin-r-text').textContent = 'r = ' + r.toFixed(4);
+
+  var xS = x.slice().sort(function(a, b) { return a - b; });
+  var xMin = xS[0], xMax = xS[xS.length - 1], pad = (xMax - xMin) * 0.1 || 0.1;
+  var xL = [xMin - pad, xMax + pad], yL = [slope * xL[0] + intercept, slope * xL[1] + intercept];
+  
+  if (linChart) linChart.destroy();
+  linChart = new Chart(document.getElementById('lin-chart').getContext('2d'), {
+    type: 'scatter',
+    data: { 
+      datasets: [
+        { label: 'Data', data: x.map(function(xi, i) { return { x: xi, y: y[i] }; }), backgroundColor: '#3B82F6', borderColor: '#1E40AF', borderWidth: 2, pointRadius: 6, showLine: false }, 
+        { label: 'Regresi', data: [{ x: xL[0], y: yL[0] }, { x: xL[1], y: yL[1] }], borderColor: '#EF4444', borderWidth: 2, pointRadius: 0, showLine: true, fill: false }
+      ] 
+    },
+    options: { 
+      responsive: false, 
+      animation: false, 
+      plugins: { 
+        legend: { position: 'top' }, 
+        title: { display: true, text: 'Kurva Linearitas' }
+      }, 
+      scales: { 
+        x: { title: { display: true, text: 'Konsentrasi (mg/L)' } }, 
+        y: { title: { display: true, text: 'Absorbansi' } } 
+      } 
+    },
+    plugins: [{
+      id: 'customCanvasBackgroundColor',
+      beforeDraw: (chart) => {
+        const ctx = chart.canvas.getContext('2d');
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+      }
+    }]
+  });
+  document.getElementById('lin-chart-container').classList.remove('hidden');
+  saveProjectData();
+}
+
+function calcPresisi() {
+  var rows = document.getElementById('pres-table').querySelectorAll('tr');
+  var vals = [];
+  for (var i = 0; i < rows.length; i++) { var ins = rows[i].querySelectorAll('input'); if (!ins[1] || !ins[1].value) return; vals.push(parseFloat(ins[1].value)); }
+  var m = mean(vals), s = sd(vals), rsd = (s / m) * 100, cv = cvH(m), lim = 0.67 * cv, pass = rsd <= lim;
+  if (activeProject) { activeProject.results.pres = pass; saveProjects(); }
+  document.getElementById('pres-result').innerHTML = '<p><strong>Rata-rata:</strong> ' + m.toFixed(4) + ' mg/L</p><p><strong>SD:</strong> ' + s.toFixed(6) + '</p><p><strong>%RSD:</strong> ' + rsd.toFixed(4) + '%</p><p><strong>CV Horwitz:</strong> ' + cv.toFixed(4) + '%</p><p><strong>0,67 × CV Horwitz:</strong> ' + lim.toFixed(4) + '%</p><p><strong>Syarat:</strong> %RSD ≤ 0,67×CV Horwitz → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
+  document.getElementById('pres-result').classList.remove('hidden');
+  saveProjectData();
+}
+
+function calcAkurasi() {
+  var cs = parseFloat(document.getElementById('akur-csampel').value), csp = parseFloat(document.getElementById('akur-cspike').value);
+  if (isNaN(cs) || isNaN(csp) || csp === 0) return;
+  var rows = document.getElementById('akur-table').querySelectorAll('tr');
+  var vals = [];
+  for (var i = 0; i < rows.length; i++) { var ins = rows[i].querySelectorAll('input'); if (!ins[1] || !ins[1].value) return; vals.push(parseFloat(ins[1].value)); }
+  var rec = vals.map(function(v) { return ((v - cs) / csp) * 100; });
+  var avg = mean(rec), pass = avg >= 85 && avg <= 115;
+  if (activeProject) { activeProject.results.akur = pass; saveProjects(); }
+  var t = '<table class="w-full text-sm mt-2"><tr><th class="text-left">No</th><th class="text-left">C LFM</th><th class="text-left">%Recovery</th></tr>';
+  vals.forEach(function(v, i) { t += '<tr><td>' + (i + 1) + '</td><td>' + v.toFixed(4) + '</td><td>' + rec[i].toFixed(2) + '%</td></tr>'; });
+  t += '</table>';
+  document.getElementById('akur-result').innerHTML = t + '<p class="mt-3"><strong>Rata-rata %Recovery:</strong> ' + avg.toFixed(2) + '%</p><p><strong>Syarat:</strong> 85% – 115% → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
+  document.getElementById('akur-result').classList.remove('hidden');
+  saveProjectData();
+}
+
+function calcRepro() {
+  var rowsA = document.getElementById('repro-a-table').querySelectorAll('tr');
+  var rowsB = document.getElementById('repro-b-table').querySelectorAll('tr');
+  var a = [], b = [];
+  for (var i = 0; i < rowsA.length; i++) { var ins = rowsA[i].querySelectorAll('input'); if (!ins[1] || !ins[1].value) { showErr('repro-result', 'Semua 14 data harus diisi'); return; } a.push(parseFloat(ins[1].value)); }
+  for (var j = 0; j < rowsB.length; j++) { var ins2 = rowsB[j].querySelectorAll('input'); if (!ins2[1] || !ins2[1].value) { showErr('repro-result', 'Semua 14 data harus diisi'); return; } b.push(parseFloat(ins2[1].value)); }
+  var all = a.concat(b), m = mean(all), s = sd(all), rsd = (s / m) * 100, cv = cvH(m), pass = rsd <= cv;
+  if (activeProject) { activeProject.results.repro = pass; saveProjects(); }
+  document.getElementById('repro-result').innerHTML = '<p><strong>Rata-rata gabungan:</strong> ' + m.toFixed(4) + ' mg/L</p><p><strong>SD gabungan:</strong> ' + s.toFixed(6) + '</p><p><strong>%RSD:</strong> ' + rsd.toFixed(4) + '%</p><p><strong>CV Horwitz:</strong> ' + cv.toFixed(4) + '%</p><p><strong>Syarat:</strong> %RSD ≤ CV Horwitz → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
+  document.getElementById('repro-result').classList.remove('hidden');
+  saveProjectData();
+}
+
+function calcMDL() {
+  var rows = document.getElementById('mdl-table').querySelectorAll('tr');
+  var vals = [];
+  for (var i = 0; i < rows.length; i++) { var ins = rows[i].querySelectorAll('input'); if (!ins[1] || !ins[1].value) return; vals.push(parseFloat(ins[1].value)); }
+  var m = mean(vals), s = sd(vals), rsd = (s / m) * 100, mdl = 3.14 * s, loq = 10 * s, cv = cvH(m), lim = 0.67 * cv, pass = rsd <= lim;
+  if (activeProject) { activeProject.results.mdl = pass; saveProjects(); }
+  document.getElementById('mdl-result').innerHTML = '<p><strong>Rata-rata:</strong> ' + m.toFixed(6) + ' mg/L</p><p><strong>SD:</strong> ' + s.toFixed(6) + '</p><p><strong>MDL (3,14 × SD):</strong> ' + mdl.toFixed(6) + ' mg/L</p><p><strong>LOQ (10 × SD):</strong> ' + loq.toFixed(6) + ' mg/L</p><p><strong>%RSD:</strong> ' + rsd.toFixed(4) + '%</p><p><strong>Cek Presisi:</strong> %RSD ≤ 0,67×CV Horwitz → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
+  document.getElementById('mdl-result').classList.remove('hidden');
+
+  var cspike = parseFloat(document.getElementById('mdl-cspike').value) || 0;
+  var baku = parseFloat(document.getElementById('mdl-baku-mutu').value) || 0;
+  var rsdPass = rsd <= lim;
+  var recovery = cspike > 0 ? (m / cspike) * 100 : 0;
+  var recoveryPass = recovery >= 90 && recovery <= 110;
+  var spike10mdl = 10 * mdl;
+  var spikePass = cspike > mdl && cspike < spike10mdl;
+  var sn = s > 0 ? m / s : 0;
+  var snPass = sn >= 2.5 && sn <= 10;
+  var bakuPass = baku > 0 ? mdl < baku : false;
+
+  var evalRows = [
+    { num: 1, param: 'RSD', syarat: 'RSD ≤ 0.67 CV Horwitz', hasil: rsd.toFixed(4) + '%', pass: rsdPass },
+    { num: 2, param: 'Recovery', syarat: '90% - 110%', hasil: recovery.toFixed(2) + '%', pass: recoveryPass },
+    { num: 3, param: 'Spike', syarat: 'MDL < spike < 10×MDL', hasil: mdl.toFixed(6) + ' < ' + cspike.toFixed(6) + ' < ' + spike10mdl.toFixed(6), pass: spikePass },
+    { num: 4, param: 'S/N (Signal to Noise)', syarat: '2.5 - 10', hasil: sn.toFixed(4), pass: snPass },
+    { num: 5, param: 'Baku Mutu', syarat: 'MDL < Baku Mutu', hasil: mdl.toFixed(6) + ' < ' + baku.toFixed(6), pass: bakuPass }
+  ];
+
+  var tbody = document.getElementById('mdl-acceptance-body');
+  tbody.innerHTML = '';
+  evalRows.forEach(function(row) {
+    var tr = document.createElement('tr');
+    var bgClass = row.pass ? 'bg-green-100' : 'bg-red-100';
+    tr.innerHTML = '<td class="border border-gray-300 px-4 py-2">' + row.num + '</td><td class="border border-gray-300 px-4 py-2">' + row.param + '</td><td class="border border-gray-300 px-4 py-2">' + row.syarat + '</td><td class="border border-gray-300 px-4 py-2">' + row.hasil + '</td><td class="border border-gray-300 px-4 py-2 text-center ' + bgClass + ' font-semibold">' + (row.pass ? 'Memenuhi' : 'Tidak Memenuhi') + '</td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('mdl-acceptance-table').classList.remove('hidden');
+  saveProjectData();
+}
+
+document.getElementById('btn-calc-lin').addEventListener('click', calcLinearitas);
+document.getElementById('btn-calc-pres').addEventListener('click', calcPresisi);
+document.getElementById('btn-calc-akur').addEventListener('click', calcAkurasi);
+document.getElementById('btn-calc-repro').addEventListener('click', calcRepro);
+document.getElementById('btn-calc-mdl').addEventListener('click', calcMDL);
+
+function autoCalculateAll() {
+  if (!activeProject || !activeProject.data) return;
+  calcLinearitas(); calcPresisi(); calcAkurasi(); calcRepro(); calcMDL();
+}
+
+// --- CSV EXPORT ---
+function exportProjectCSV(proj) {
+  var d = proj.data || {};
+  var r = proj.results || {};
+  var csv = 'LAPORAN LENGKAP VERIFIKASI METODE\n\n';
+  
+  csv += 'INFORMASI PROYEK\n';
+  csv += 'Nama Proyek,' + proj.name + '\n';
+  csv += 'Analis 1,' + (proj.analis1 || '-') + '\n';
+  csv += 'Analis 2,' + (proj.analis2 || '-') + '\n';
+  csv += 'Parameter,' + proj.logam + '\n';
+  csv += 'Jenis Sampel,' + (proj.jenisSampel || '-') + '\n\n';
+
+  csv += 'RINGKASAN HASIL\n';
+  csv += 'Parameter,Status\n';
+  csv += 'Linearitas,' + (r.lin === true ? 'Diterima' : r.lin === false ? 'Ditolak' : 'Belum') + '\n';
+  csv += 'Presisi,' + (r.pres === true ? 'Diterima' : r.pres === false ? 'Ditolak' : 'Belum') + '\n';
+  csv += 'Akurasi,' + (r.akur === true ? 'Diterima' : r.akur === false ? 'Ditolak' : 'Belum') + '\n';
+  csv += 'Reprodusibilitas,' + (r.repro === true ? 'Diterima' : r.repro === false ? 'Ditolak' : 'Belum') + '\n';
+  csv += 'MDL & LOQ,' + (r.mdl === true ? 'Diterima' : r.mdl === false ? 'Ditolak' : 'Belum') + '\n\n';
+
+  if (d.lin && d.lin.length > 0) {
+    csv += 'DATA LINEARITAS\nNo,Konsentrasi (mg/L),Absorbansi\n';
+    d.lin.forEach((row, i) => csv += (i+1) + ',' + (row[0]||'') + ',' + (row[1]||'') + '\n');
+    csv += '\n';
+  }
+  if (d.pres && d.pres.length > 0) {
+    csv += 'DATA PRESISI\nNo,Absorbansi,Konsentrasi (mg/L)\n';
+    d.pres.forEach((row, i) => csv += (i+1) + ',' + (row[0]||'') + ',' + (row[1]||'') + '\n');
+    csv += '\n';
+  }
+  if (d.akur && d.akur.length > 0) {
+    csv += 'DATA AKURASI (C Sampel: '+(d.akurCs||'-')+' | C Spike: '+(d.akurCsp||'-')+')\nNo,Absorbansi,Konsentrasi LFM (mg/L)\n';
+    d.akur.forEach((row, i) => csv += (i+1) + ',' + (row[0]||'') + ',' + (row[1]||'') + '\n');
+    csv += '\n';
+  }
+  if (d.reproA && d.reproA.length > 0) {
+    csv += 'DATA REPRODUSIBILITAS (Analis 1)\nNo,Absorbansi,Konsentrasi (mg/L)\n';
+    d.reproA.forEach((row, i) => csv += (i+1) + ',' + (row[0]||'') + ',' + (row[1]||'') + '\n');
+    csv += '\n';
+  }
+  if (d.reproB && d.reproB.length > 0) {
+    csv += 'DATA REPRODUSIBILITAS (Analis 2)\nNo,Absorbansi,Konsentrasi (mg/L)\n';
+    d.reproB.forEach((row, i) => csv += (i+1) + ',' + (row[0]||'') + ',' + (row[1]||'') + '\n');
+    csv += '\n';
+  }
+  if (d.mdl && d.mdl.length > 0) {
+    csv += 'DATA MDL & LOQ (Baku Mutu: '+(d.mdlBaku||'-')+')\nNo,Absorbansi,Konsentrasi (mg/L)\n';
+    d.mdl.forEach((row, i) => csv += (i+1) + ',' + (row[0]||'') + ',' + (row[1]||'') + '\n');
+    csv += '\n';
+  }
+
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = proj.name + '_Laporan_Lengkap.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+// --- PDF EXPORT ---
+btnPDF.addEventListener('click', function() {
+  if (!activeProject) return;
+  autoCalculateAll(); 
+  
+  try {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF('p', 'mm', 'a4');
+    var p = activeProject, d = p.data || {}, r = p.results || {};
+    var pw = doc.internal.pageSize.getWidth(), margin = 15;
+    var y = 15;
+
+    function checkY(addY) { if (y + addY > 280) { doc.addPage(); y = 20; } }
+    function addText(lbl, val) {
+      checkY(6);
+      doc.setFont(undefined, 'bold'); doc.text(lbl, margin, y);
+      if (val) { doc.setFont(undefined, 'normal'); doc.text(val, margin + 45, y); }
+      y += 5;
+    }
+    function drawDataSection(title, headers, dataArray) {
+      if (!dataArray || dataArray.length === 0) return;
+      checkY(25);
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text(title, margin, y); y += 4;
+      var body = dataArray.map((row, i) => [i + 1, row[0] || '-', row[1] || '-']);
+      doc.autoTable({ startY: y, head: [headers], body: body, margin: { left: margin, right: margin }, styles: { fontSize: 8 }, headStyles: { fillColor: [71, 148, 161] }, theme: 'grid' });
+      y = doc.lastAutoTable.finalY + 5;
+    }
+
+    doc.setFillColor(11, 79, 92); doc.rect(0, 0, pw, 38, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont(undefined, 'bold');
+    doc.text('LAPORAN LENGKAP VERIFIKASI METODE', pw / 2, 15, { align: 'center' });
+    doc.setFontSize(11); doc.setFont(undefined, 'normal');
+    doc.text('SNI 6989-84:2019', pw / 2, 22, { align: 'center' });
+    doc.setFontSize(9); doc.text('Proyek: ' + p.name, pw / 2, 30, { align: 'center' });
+    y = 45; doc.setTextColor(0, 0, 0);
+
+    doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text('1. Informasi Proyek & Ringkasan', margin, y); y += 4;
+    var info = [['Nama Proyek', p.name], ['Analis', (p.analis1||'-') + ' & ' + (p.analis2||'-')], ['Parameter', p.logam], ['Jenis Sampel', p.jenisSampel || '-']];
+    doc.autoTable({ startY: y, body: info, margin: { left: margin, right: margin }, styles: { fontSize: 8 }, theme: 'grid' });
+    y = doc.lastAutoTable.finalY + 8;
+
+    var summaryData = [
+      ['Linearitas', 'r >= 0,995', r.lin === true ? 'Diterima' : r.lin === false ? 'Ditolak' : 'Belum'],
+      ['Presisi', '%RSD <= 0,67xCV', r.pres === true ? 'Diterima' : r.pres === false ? 'Ditolak' : 'Belum'],
+      ['Akurasi', '85%-115%', r.akur === true ? 'Diterima' : r.akur === false ? 'Ditolak' : 'Belum'],
+      ['Reprodusibilitas', '%RSD <= CV', r.repro === true ? 'Diterima' : r.repro === false ? 'Ditolak' : 'Belum'],
+      ['MDL & LOQ', 'Memenuhi Syarat', r.mdl === true ? 'Diterima' : r.mdl === false ? 'Ditolak' : 'Belum']
+    ];
+    doc.autoTable({ startY: y, head: [['Parameter', 'Kriteria', 'Status Gabungan']], body: summaryData, margin: { left: margin, right: margin }, styles: { fontSize: 8 }, headStyles: { fillColor: [11, 107, 122] }, theme: 'grid' });
+    y = doc.lastAutoTable.finalY + 10;
+
+    if (d.lin && d.lin.length > 0) {
+      drawDataSection('2. Linearitas', ['No', 'Kons (mg/L)', 'Absorbansi'], d.lin);
+      let x=[], yArr=[];
+      d.lin.forEach(row=>{ if(row[0]&&row[1]){ x.push(parseFloat(row[0])); yArr.push(parseFloat(row[1])); }});
+      if(x.length >= 3){
+        let n=x.length, sx=0, sy=0, sxy=0, sx2=0, sy2=0;
+        for(let j=0;j<n;j++){ sx+=x[j]; sy+=yArr[j]; sxy+=x[j]*yArr[j]; sx2+=x[j]*x[j]; sy2+=yArr[j]*yArr[j]; }
+        let slope=(n*sxy-sx*sy)/(n*sx2-sx*sx), intercept=(sy-slope*sx)/n;
+        let r_val=(n*sxy-sx*sy)/Math.sqrt((n*sx2-sx*sx)*(n*sy2-sy*sy));
+        doc.setFontSize(9);
+        addText('Persamaan Regresi', ': y = ' + slope.toFixed(5) + 'x + ' + intercept.toFixed(5));
+        addText('Koefisien Korelasi (r)', ': ' + r_val.toFixed(5));
+        addText('Status Validasi', ': ' + (Math.abs(r_val) >= 0.995 ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI'));
+        y += 4;
+        
+        let canvas = document.getElementById('lin-chart');
+        if (canvas) {
+          checkY(90);
+          doc.setFont(undefined, 'bold'); doc.text('Kurva Kalibrasi:', margin, y); y += 3;
+          let imgData = canvas.toDataURL('image/png', 1.0);
+          doc.addImage(imgData, 'PNG', margin, y, 140, 80);
+          y += 85;
+        }
+      }
+    }
+
+    if (d.pres && d.pres.length > 0) {
+      drawDataSection('3. Presisi', ['No', 'Absorbansi', 'Kons (mg/L)'], d.pres);
+      let vals = d.pres.map(row => parseFloat(row[1])).filter(v=>!isNaN(v));
+      if(vals.length > 0) {
+        let m=mean(vals), s=sd(vals), rsd=(s/m)*100, cv=cvH(m);
+        doc.setFontSize(9);
+        addText('Rata-rata Konsentrasi', ': ' + m.toFixed(4) + ' mg/L');
+        addText('Standar Deviasi (SD)', ': ' + s.toFixed(5));
+        addText('% RSD', ': ' + rsd.toFixed(3) + ' %');
+        addText('Batas Maks (0.67 x CV)', ': ' + (0.67*cv).toFixed(3) + ' %');
+        addText('Status Validasi', ': ' + (rsd <= 0.67*cv ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI'));
+        y += 4;
+      }
+    }
+
+    if (d.akur && d.akur.length > 0) {
+      checkY(30);
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); 
+      doc.text('4. Akurasi (C Sampel: '+(d.akurCs||'-')+' mg/L, C Spike: '+(d.akurCsp||'-')+' mg/L)', margin, y); y += 4;
+      let cs=parseFloat(d.akurCs), csp=parseFloat(d.akurCsp);
+      let akurBody = [], recs = [];
+      d.akur.forEach((row, i) => {
+        let v = parseFloat(row[1]);
+        let recText = '-';
+        if(!isNaN(v) && !isNaN(cs) && !isNaN(csp) && csp>0) {
+          let rec = ((v-cs)/csp)*100;
+          recs.push(rec);
+          recText = rec.toFixed(2) + ' %';
+        }
+        akurBody.push([i+1, row[0]||'-', row[1]||'-', recText]);
+      });
+      doc.autoTable({ startY: y, head: [['No', 'Absorbansi', 'C LFM (mg/L)', '% Recovery']], body: akurBody, margin: { left: margin, right: margin }, styles: { fontSize: 8 }, headStyles: { fillColor: [71, 148, 161] }, theme: 'grid' });
+      y = doc.lastAutoTable.finalY + 5;
+      if(recs.length > 0) {
+        let avgRec = mean(recs);
+        doc.setFontSize(9);
+        addText('Rata-rata % Recovery', ': ' + avgRec.toFixed(2) + ' %');
+        addText('Status Validasi', ': ' + ((avgRec>=85 && avgRec<=115) ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI'));
+        y += 4;
+      }
+    }
+
+    if ((d.reproA && d.reproA.length>0) || (d.reproB && d.reproB.length>0)) {
+      drawDataSection('5. Reprodusibilitas (Analis 1)', ['No', 'Absorbansi', 'Kons (mg/L)'], d.reproA);
+      drawDataSection('6. Reprodusibilitas (Analis 2)', ['No', 'Absorbansi', 'Kons (mg/L)'], d.reproB);
+      let valA = (d.reproA||[]).map(r=>parseFloat(r[1])).filter(v=>!isNaN(v));
+      let valB = (d.reproB||[]).map(r=>parseFloat(r[1])).filter(v=>!isNaN(v));
+      let allV = valA.concat(valB);
+      if(allV.length > 0) {
+        let m=mean(allV), s=sd(allV), rsd=(s/m)*100, cv=cvH(m);
+        doc.setFontSize(9);
+        addText('Rata-rata Gabungan', ': ' + m.toFixed(4) + ' mg/L');
+        addText('SD Gabungan', ': ' + s.toFixed(5));
+        addText('% RSD Gabungan', ': ' + rsd.toFixed(3) + ' %');
+        addText('Batas Maks (CV Horwitz)', ': ' + cv.toFixed(3) + ' %');
+        addText('Status Validasi', ': ' + (rsd <= cv ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI'));
+        y += 4;
+      }
+    }
+
+    if (d.mdl && d.mdl.length > 0) {
+      drawDataSection('7. Penentuan MDL & LOQ', ['No', 'Absorbansi', 'Kons (mg/L)'], d.mdl);
+      let vals = d.mdl.map(row => parseFloat(row[1])).filter(v=>!isNaN(v));
+      if(vals.length > 0) {
+        let m=mean(vals), s=sd(vals), rsd=(s/m)*100, mdl=3.14*s, loq=10*s;
+        doc.setFontSize(9);
+        addText('Rata-rata Konsentrasi', ': ' + m.toFixed(5) + ' mg/L');
+        addText('Standar Deviasi (SD)', ': ' + s.toFixed(5));
+        addText('MDL (3.14 x SD)', ': ' + mdl.toFixed(5) + ' mg/L');
+        addText('LOQ (10 x SD)', ': ' + loq.toFixed(5) + ' mg/L');
+        y += 5;
+
+        let tbody = document.getElementById('mdl-acceptance-body');
+        if(tbody && tbody.innerHTML !== '') {
+          checkY(40);
+          doc.setFontSize(10); doc.setFont(undefined, 'bold'); 
+          doc.text('Tabel Uji Keberterimaan MDL', margin, y); y += 4;
+          let mdlRows = [];
+          tbody.querySelectorAll('tr').forEach(tr => {
+            let tds = tr.querySelectorAll('td');
+            if(tds.length === 5) {
+              mdlRows.push([tds[0].innerText, tds[1].innerText, tds[2].innerText, tds[3].innerText, tds[4].innerText]);
+            }
+          });
+          doc.autoTable({ startY: y, head: [['No', 'Parameter', 'Syarat', 'Hasil', 'Keterangan']], body: mdlRows, margin: { left: margin, right: margin }, styles: { fontSize: 8 }, headStyles: { fillColor: [71, 148, 161] }, theme: 'grid' });
+          y = doc.lastAutoTable.finalY + 5;
+        }
+      }
+    }
+
+    doc.save(p.name + '_Laporan_Lengkap_SmartVerify.pdf');
+  } catch (e) {
+    console.error("Error Ekspor PDF:", e);
+    alert("Gagal mengunduh PDF. Error: " + e.message);
+  }
+});
+
+// --- INIT ---
+renderHome();
+initLinTable(5);
+initSimpleTable('pres-table', 7);
+initSimpleTable('akur-table', 7);
+initSimpleTable('repro-a-table', 7);
+initSimpleTable('repro-b-table', 7);
+initSimpleTable('mdl-table', 7);
+lucide.createIcons();
+
+})();
+</script>
+</body>
+</html>
