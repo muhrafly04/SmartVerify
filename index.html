@@ -492,32 +492,45 @@ function setupExcelGrid(tableId) {
 
 function clearSelection() {
   document.querySelectorAll('.excel-grid input.selected').forEach(function(inp) { inp.classList.remove('selected'); });
-  activeColumn = null;
-  selectionStartRow = null;
 }
 
+// 1. MULAI BLOK (MOUSEDOWN)
 document.addEventListener('mousedown', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
   if (!input) return;
-  if (e.button !== 0) return;
+  if (e.button !== 0) return; // Hanya klik kiri
+  
   clearSelection();
-  var col = input.getAttribute('data-col');
-  var row = input.getAttribute('data-row');
-  activeColumn = col;
-  selectionStartRow = row;
+  activeColumn = input.getAttribute('data-col');
+  selectionStartRow = parseInt(input.getAttribute('data-row'));
   input.classList.add('selected');
 });
 
+// 2. DRAG BLOK (MOUSEOVER) - Anti-lompat saat ditarik cepat
 document.addEventListener('mouseover', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
-  if (!input || e.buttons !== 1) return;
+  if (!input || e.buttons !== 1 || activeColumn === null) return;
+  
   var col = input.getAttribute('data-col');
-  if (col !== activeColumn) return;
-  input.classList.add('selected');
+  if (col !== activeColumn) return; // Jangan menyeberang kolom
+  
+  var currentRow = parseInt(input.getAttribute('data-row'));
+  var minRow = Math.min(selectionStartRow, currentRow);
+  var maxRow = Math.max(selectionStartRow, currentRow);
+  
+  var tbody = input.closest('tbody');
+  tbody.querySelectorAll('input').forEach(function(inp) { inp.classList.remove('selected'); });
+  
+  var inputs = tbody.querySelectorAll('input[data-col="' + col + '"]');
+  inputs.forEach(function(inp) {
+    var r = parseInt(inp.getAttribute('data-row'));
+    if (r >= minRow && r <= maxRow) inp.classList.add('selected');
+  });
 });
 
+// 3. NAVIGASI KEYBOARD
 document.addEventListener('keydown', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
@@ -535,72 +548,107 @@ document.addEventListener('keydown', function(e) {
   if (targetInput) targetInput.focus();
 });
 
+// 4. SHIFT + CLICK
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
-  if (!input || !e.shiftKey || activeColumn === null) return;
+  if (!input || !e.shiftKey || activeColumn === null || selectionStartRow === null) return;
+  
   var col = input.getAttribute('data-col');
   var row = parseInt(input.getAttribute('data-row'));
-  var startRow = parseInt(selectionStartRow);
   if (col !== activeColumn) return;
-  var minRow = Math.min(startRow, row);
-  var maxRow = Math.max(startRow, row);
-  var currentTable = input.closest('.excel-grid');
-  var tbody = currentTable.querySelector('tbody');
-  var rows = tbody.querySelectorAll('tr');
-  rows.forEach(function(rowEl, rowIdx) {
-    var inputs = rowEl.querySelectorAll('input');
-    inputs.forEach(function(inp) {
-      var inpCol = inp.getAttribute('data-col');
-      var inpRow = parseInt(inp.getAttribute('data-row'));
-      if (inpCol === col && inpRow >= minRow && inpRow <= maxRow) {
-        inp.classList.add('selected');
-      }
-    });
+  
+  var minRow = Math.min(selectionStartRow, row);
+  var maxRow = Math.max(selectionStartRow, row);
+  var tbody = input.closest('tbody');
+  
+  tbody.querySelectorAll('input').forEach(function(inp) { inp.classList.remove('selected'); });
+  var inputs = tbody.querySelectorAll('input[data-col="' + col + '"]');
+  inputs.forEach(function(inp) {
+    var r = parseInt(inp.getAttribute('data-row'));
+    if (r >= minRow && r <= maxRow) inp.classList.add('selected');
   });
 });
 
+// 5. PASTE (CTRL+V) - Dilengkapi trigger otomatis
 document.addEventListener('paste', function(e) {
   if (!e.target.closest('.excel-grid input')) return;
   var input = e.target.closest('.excel-grid input');
   if (!input) return;
+  
   var pasteData = (e.clipboardData || window.clipboardData).getData('text');
   if (!pasteData) return;
   e.preventDefault();
+  
   var startRow = parseInt(input.getAttribute('data-row'));
   var startCol = parseInt(input.getAttribute('data-col'));
-  var currentTable = input.closest('.excel-grid');
-  var tbody = currentTable.querySelector('tbody');
+  var tbody = input.closest('tbody');
   var rows = tbody.querySelectorAll('tr');
-  var lines = pasteData.split(/\r?\n/).filter(function(line) { return line.trim(); });
+  
+  var lines = pasteData.split(/\r?\n/);
+  if(lines[lines.length - 1] === "") lines.pop(); // Hapus sisa baris kosong bawaan Excel
+  
   lines.forEach(function(line, lineIdx) {
     var rowIdx = startRow + lineIdx;
     if (rowIdx >= rows.length) return;
     var cells = line.split('\t');
     var rowEl = rows[rowIdx];
     var inputs = rowEl.querySelectorAll('input');
+    
     cells.forEach(function(cell, cellIdx) {
       var colIdx = startCol + cellIdx;
       if (colIdx >= inputs.length) return;
-      inputs[colIdx].value = cell.trim();
+      // Konversi koma indonesia ke titik agar dikenali sistem
+      inputs[colIdx].value = cell.trim().replace(',', '.');
+      // Beritahu sistem bahwa ada data yang masuk (trigger kalkulasi)
+      inputs[colIdx].dispatchEvent(new Event('input', { bubbles: true })); 
     });
   });
-  saveProjectData();
 });
 
+// 6. COPY (CTRL+C) - Menggunakan trik aman untuk file lokal
 document.addEventListener('keydown', function(e) {
   if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return;
+  
   var selectedInputs = Array.from(document.querySelectorAll('input.selected'));
-  if (selectedInputs.length === 0) return;
+  if (selectedInputs.length === 0) return; // Jika tidak ada yang diblok, biarkan browser mengcopy teks biasa
+  
   e.preventDefault();
+  
+  // Mengurutkan sel agar copy paste tidak terbalik
+  selectedInputs.sort(function(a, b) {
+      return parseInt(a.getAttribute('data-row')) - parseInt(b.getAttribute('data-row'));
+  });
+  
   var rowData = {};
   selectedInputs.forEach(function(input) {
     var row = input.getAttribute('data-row');
     if (!rowData[row]) rowData[row] = [];
     rowData[row].push(input.value);
   });
+  
   var copyString = Object.values(rowData).map(function(cols) { return cols.join('\t'); }).join('\n');
-  navigator.clipboard.writeText(copyString).catch(function() {});
+  
+  // Trik Textarea Tersembunyi (Aman untuk file:///)
+  var tempTextArea = document.createElement('textarea');
+  tempTextArea.value = copyString;
+  tempTextArea.style.position = 'fixed';
+  tempTextArea.style.opacity = '0';
+  document.body.appendChild(tempTextArea);
+  tempTextArea.select();
+  tempTextArea.setSelectionRange(0, 99999);
+  
+  try {
+    document.execCommand('copy');
+    // Beri efek kedip hijau sebagai tanda berhasil di-copy
+    selectedInputs.forEach(function(inp) {
+        inp.style.backgroundColor = '#d1fae5'; 
+        setTimeout(function(){ inp.style.backgroundColor = ''; }, 250);
+    });
+  } catch (err) {
+    console.error('Browser tidak mendukung copy otomatis', err);
+  }
+  document.body.removeChild(tempTextArea);
 });
 
 // --- NAVIGATION ---
