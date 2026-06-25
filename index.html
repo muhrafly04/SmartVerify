@@ -691,6 +691,56 @@ document.getElementById('btn-link-repro').addEventListener('click', function() {
   // Sembunyikan pesan sukses setelah 4 detik
   setTimeout(function() { msg.classList.add('hidden'); }, 4000);
 });
+  // --- AUTO-NARRATIVE KESIMPULAN ---
+// Munculkan panel kesimpulan hanya jika proyek sudah dibuka
+document.getElementById('btn-calc-mdl').addEventListener('click', function() {
+  document.getElementById('panel-kesimpulan').classList.remove('hidden');
+});
+
+document.getElementById('btn-generate-kesimpulan').addEventListener('click', function() {
+  if (!activeProject || !activeProject.results) return;
+  
+  var r = activeProject.results;
+  var logam = activeProject.logam || 'parameter uji';
+  
+  // Cek apakah semua lulus atau ada yang gagal
+  var isAllPass = (r.lin && r.pres && r.akur && r.repro && r.mdl);
+  
+  var teks = "Berdasarkan hasil pengujian verifikasi metode untuk parameter " + logam + " yang merujuk pada standar SNI 6989-84:2019, ";
+  
+  if (isAllPass) {
+    teks += "dapat disimpulkan bahwa metode tersebut MEMENUHI SYARAT keberterimaan secara keseluruhan. ";
+    teks += "Metode ini menunjukkan tingkat linearitas instrumen yang sangat baik, tingkat presisi (repetabilitas dan reprodusibilitas) yang andal dengan persentase simpangan baku relatif (%RSD) berada di bawah batas maksimum CV Horwitz, ";
+    teks += "serta tingkat akurasi perolehan kembali (%Recovery) yang masuk dalam rentang spesifikasi. Evaluasi Batas Deteksi Metode (MDL) dan Batas Kuantitasi (LOQ) juga telah memenuhi kriteria sinyal terhadap bising (S/N). ";
+    teks += "Oleh karena itu, metode analisis ini dinyatakan VALID dan LAYAK diaplikasikan secara rutin di UPTD Laboratorium Kesehatan Kota Mojokerto.";
+  } else {
+    teks += "dijumpai bahwa metode tersebut BELUM MEMENUHI SYARAT keberterimaan secara penuh. ";
+    var gagal = [];
+    if (r.lin === false) gagal.push("linearitas");
+    if (r.pres === false) gagal.push("presisi (repetabilitas)");
+    if (r.akur === false) gagal.push("akurasi");
+    if (r.repro === false) gagal.push("reprodusibilitas");
+    if (r.mdl === false) gagal.push("evaluasi MDL/LOQ");
+    
+    teks += "Terdapat parameter kinerja analitik yang tidak masuk dalam batas toleransi SNI, yaitu pada parameter: " + gagal.join(", ") + ". ";
+    teks += "Disarankan untuk melakukan evaluasi lanjutan (troubleshooting) terhadap prosedur preparasi sampel, optimasi instrumen analitik, maupun pengecekan kemurnian reagen sebelum metode ini dapat diaplikasikan untuk pengujian sampel lingkungan secara rutin.";
+  }
+
+  document.getElementById('teks-kesimpulan').value = teks;
+  document.getElementById('kesimpulan-box').classList.remove('hidden');
+});
+
+// Fitur Salin Teks
+document.getElementById('btn-copy-kesimpulan').addEventListener('click', function() {
+  var copyText = document.getElementById('teks-kesimpulan');
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); // Untuk perangkat mobile
+  navigator.clipboard.writeText(copyText.value);
+  
+  var msg = document.getElementById('copy-msg');
+  msg.classList.remove('hidden');
+  setTimeout(function() { msg.classList.add('hidden'); }, 2500);
+});
 // --- DILUTION CALCULATOR ---
 var dilOverlay = document.getElementById('dilution-overlay');
 document.getElementById('dilution-fab').addEventListener('click', function() { dilOverlay.classList.remove('hidden'); });
