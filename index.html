@@ -58,7 +58,7 @@
         <div class="sidebar-item" data-page="linearitas"><i data-lucide="trending-up" class="inline w-4 h-4 mr-2"></i>Linearitas</div>
         <div class="sidebar-item" data-page="presisi"><i data-lucide="target" class="inline w-4 h-4 mr-2"></i>Presisi</div>
         <div class="sidebar-item" data-page="akurasi"><i data-lucide="check-circle" class="inline w-4 h-4 mr-2"></i>Akurasi</div>
-        <div class="sidebar-item" data-page="reprodusibilitas"><i data-lucide="users" class="inline w-4 h-4 mr-2"></i>Reprodusibilitas</div>
+    
         <div class="sidebar-item" data-page="mdl"><i data-lucide="activity" class="inline w-4 h-4 mr-2"></i>MDL & LOQ</div>
         <div class="sidebar-item" data-page="profil"><i data-lucide="user-circle" class="inline w-4 h-4 mr-2"></i>Profil</div>
       </nav>
@@ -219,21 +219,49 @@
           </div>
         </section>
 
-        <section id="page-presisi" class="page-content hidden">
-          <div class="glass-card rounded-2xl p-6 shadow-lg">
-            <h2 class="text-xl font-bold mb-4" title="%RSD = (SD / Mean) × 100%">Presisi</h2>
+       <section id="page-presisi" class="page-content hidden">
+          <div class="mb-4 flex gap-2 border-b border-gray-200">
+            <button id="tab-repetabilitas" class="px-6 py-3 font-bold text-teal-700 border-b-4 border-teal-600 bg-teal-50 rounded-t-xl outline-none transition-all">Repetabilitas</button>
+            <button id="tab-reprodusibilitas" class="px-6 py-3 font-semibold text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-t-xl outline-none transition-all border-b-4 border-transparent">Reprodusibilitas</button>
+          </div>
+
+          <div id="content-repetabilitas" class="glass-card rounded-2xl rounded-tl-none p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4" title="%RSD = (SD / Mean) × 100%">Uji Repetabilitas (Presisi Analis Tunggal)</h2>
             <p class="text-sm text-gray-600 mb-3">Masukkan 7 data konsentrasi pengulangan (mg/L):</p>
             <table class="excel-grid w-full text-sm mb-4" data-table="pres-table">
               <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi (mg/L)</th></tr></thead>
               <tbody id="pres-table"></tbody>
             </table>
-            <button id="btn-calc-pres" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
+            <button id="btn-calc-pres" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung Repetabilitas</button>
             <div id="pres-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
           </div>
+
+          <div id="content-reprodusibilitas" class="glass-card rounded-2xl rounded-tl-none p-6 shadow-lg hidden">
+            <h2 class="text-xl font-bold mb-4" title="CV Horwitz = 2^(1 - 0.5 × log₁₀(C))">Uji Reprodusibilitas (Presisi Antar Analis)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <div>
+                <p id="repro-a-label" class="text-sm font-semibold mb-2">Analis A (7 data, mg/L):</p>
+                <table class="excel-grid w-full text-sm" data-table="repro-a-table">
+                  <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi</th></tr></thead>
+                  <tbody id="repro-a-table"></tbody>
+                </table>
+              </div>
+              <div>
+                <p id="repro-b-label" class="text-sm font-semibold mb-2">Analis B (7 data, mg/L):</p>
+                <table class="excel-grid w-full text-sm" data-table="repro-b-table">
+                  <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi</th></tr></thead>
+                  <tbody id="repro-b-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <button id="btn-calc-repro" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung Reprodusibilitas</button>
+            <div id="repro-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+          </div>
+
           <div id="pres-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
             <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
           </div>
-        </section>
+          <div id="repro-no-project-msg" class="hidden"></div> </section>
 
         <section id="page-akurasi" class="page-content hidden">
           <div class="glass-card rounded-2xl p-6 shadow-lg">
@@ -255,33 +283,7 @@
           </div>
         </section>
 
-        <section id="page-reprodusibilitas" class="page-content hidden">
-          <div class="glass-card rounded-2xl p-6 shadow-lg">
-            <h2 class="text-xl font-bold mb-4" title="CV Horwitz = 2^(1 - 0.5 × log₁₀(C))">Reprodusibilitas</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-              <div>
-                <p id="repro-a-label" class="text-sm font-semibold mb-2">Analis A (7 data, mg/L):</p>
-                <table class="excel-grid w-full text-sm" data-table="repro-a-table">
-                  <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi</th></tr></thead>
-                  <tbody id="repro-a-table"></tbody>
-                </table>
-              </div>
-              <div>
-                <p id="repro-b-label" class="text-sm font-semibold mb-2">Analis B (7 data, mg/L):</p>
-                <table class="excel-grid w-full text-sm" data-table="repro-b-table">
-                  <thead><tr><th class="p-2 w-12">No</th><th class="p-2">Absorbansi</th><th class="p-2">Konsentrasi</th></tr></thead>
-                  <tbody id="repro-b-table"></tbody>
-                </table>
-              </div>
-            </div>
-            <button id="btn-calc-repro" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
-            <div id="repro-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
-          </div>
-          <div id="repro-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
-            <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
-          </div>
-        </section>
-
+        
         <section id="page-mdl" class="page-content hidden">
           <div class="glass-card rounded-2xl p-6 shadow-lg">
             <h2 class="text-xl font-bold mb-4" title="MDL = 3.14 × SD; LOQ = 10 × SD">MDL & LOQ</h2>
@@ -629,7 +631,20 @@ hamburger.addEventListener('click', function() {
   sidebar.classList.toggle('collapsed', !sidebarOpen);
 });
 if (window.innerWidth < 768) { sidebarOpen = false; sidebar.classList.add('collapsed'); }
+// --- TAB PRESISI (REPETABILITAS & REPRODUSIBILITAS) ---
+document.getElementById('tab-repetabilitas').addEventListener('click', function() {
+  this.className = 'px-6 py-3 font-bold text-teal-700 border-b-4 border-teal-600 bg-teal-50 rounded-t-xl outline-none transition-all';
+  document.getElementById('tab-reprodusibilitas').className = 'px-6 py-3 font-semibold text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-t-xl outline-none transition-all border-b-4 border-transparent';
+  document.getElementById('content-repetabilitas').classList.remove('hidden');
+  document.getElementById('content-reprodusibilitas').classList.add('hidden');
+});
 
+document.getElementById('tab-reprodusibilitas').addEventListener('click', function() {
+  this.className = 'px-6 py-3 font-bold text-teal-700 border-b-4 border-teal-600 bg-teal-50 rounded-t-xl outline-none transition-all';
+  document.getElementById('tab-repetabilitas').className = 'px-6 py-3 font-semibold text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-t-xl outline-none transition-all border-b-4 border-transparent';
+  document.getElementById('content-reprodusibilitas').classList.remove('hidden');
+  document.getElementById('content-repetabilitas').classList.add('hidden');
+});
 // --- DILUTION CALCULATOR ---
 var dilOverlay = document.getElementById('dilution-overlay');
 document.getElementById('dilution-fab').addEventListener('click', function() { dilOverlay.classList.remove('hidden'); });
