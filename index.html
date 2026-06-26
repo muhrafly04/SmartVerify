@@ -131,13 +131,16 @@
           </div>
         </section>
 
-        <section id="page-belajar" class="page-content hidden">
+       <section id="page-belajar" class="page-content hidden">
           <div class="mb-12">
+            <!-- Header Halaman -->
             <div class="glass-card rounded-2xl p-8 shadow-lg mb-8 bg-gradient-to-br from-teal-50 to-cyan-50 border-l-4 border-teal-600">
               <h1 class="text-3xl font-bold text-gray-800 mb-3">Pusat Pengetahuan Verifikasi</h1>
-              <p class="text-gray-600 text-base leading-relaxed">Pelajari konsep analitik, parameter SNI, dan panduan penggunaan aplikasi SmartVerify di sini.</p>
+              <p class="text-gray-600 text-base leading-relaxed">Pelajari konsep analitik, parameter SNI, prosedur penyiapan larutan, dan rumus perhitungan statistika di sini.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Bento Cards Informasi Dasar (Kode Asli Anda) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
               <div class="bento-card group rounded-2xl p-8 shadow-lg bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-100/50 cursor-default">
                 <div class="flex items-start gap-3 mb-4">
                   <div class="p-3 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors"><i data-lucide="lightbulb" class="w-6 h-6 text-amber-600"></i></div>
@@ -149,6 +152,7 @@
                   <p class="text-sm leading-relaxed text-gray-700">Berbeda dengan <strong>Validasi</strong> untuk metode baru, <strong>Verifikasi</strong> membuktikan kompetensi personel, kesesuaian alat, dan kondisi lingkungan laboratorium.</p>
                 </div>
               </div>
+              
               <div class="bento-card group rounded-2xl p-8 shadow-lg bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50 cursor-default">
                 <div class="flex items-start gap-3 mb-4">
                   <div class="p-3 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors"><i data-lucide="clipboard-list" class="w-6 h-6 text-teal-600"></i></div>
@@ -162,6 +166,7 @@
                   <div><p class="font-semibold text-gray-800 mb-1">🔬 MDL & LOQ</p><p class="text-gray-700 text-xs">MDL = 3.14×SD, LOQ = 10×SD</p></div>
                 </div>
               </div>
+
               <div class="bento-card group rounded-2xl p-8 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100/50 cursor-default md:col-span-2">
                 <div class="flex items-start gap-3 mb-4">
                   <div class="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors"><i data-lucide="book" class="w-6 h-6 text-purple-600"></i></div>
@@ -175,9 +180,93 @@
                 </div>
               </div>
             </div>
+
+            <!-- MODUL BARU: PENYIAPAN LARUTAN & RUMUS -->
+            <div class="flex items-center gap-3 mb-6 mt-10 border-b border-gray-200 pb-3">
+              <i data-lucide="flask-conical" class="w-7 h-7 text-teal-700"></i>
+              <h2 class="text-2xl font-bold text-gray-800">Panduan Preparasi & Kalkulasi Manual</h2>
+            </div>
+
+            <div class="space-y-6">
+              
+              <!-- 1. Linearitas -->
+              <div class="glass-card rounded-2xl p-6 shadow-md border-t-4 border-blue-500">
+                <h3 class="text-lg font-bold text-blue-800 mb-4">1. Linearitas (Kurva Kalibrasi)</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="droplet" class="w-4 h-4 text-blue-600"></i> Cara Penyiapan Larutan</h4>
+                    <p class="text-sm text-gray-600 leading-relaxed text-justify">Siapkan larutan induk standar logam (misal: 100 mg/L). Lakukan pengenceran bertingkat untuk membuat deret standar minimal 5 titik konsentrasi (contoh: 0,1; 0,2; 0,4; 0,6; 0,8 mg/L) di dalam labu ukur. Tambahkan asam pengawet (HNO<sub>3</sub>) agar matriksnya sesuai dengan kondisi sampel nyata. Jangan lupa siapkan blanko pelarut sebagai titik nol.</p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-blue-600"></i> Rumus Perhitungan</h4>
+                    <p class="text-sm text-gray-700 mb-1">Persamaan Regresi: <span class="font-mono font-bold text-blue-700">y = bx + a</span></p>
+                    <p class="text-sm text-gray-700 mb-2">Koefisien Korelasi (r):</p>
+                    <div class="bg-white p-2 rounded text-xs font-mono text-center border overflow-x-auto text-blue-800 font-bold whitespace-nowrap">
+                      r = [n(&Sigma;xy) - (&Sigma;x)(&Sigma;y)] / &radic;[ (n&Sigma;x&sup2; - (&Sigma;x)&sup2;) (n&Sigma;y&sup2; - (&Sigma;y)&sup2;) ]
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Presisi -->
+              <div class="glass-card rounded-2xl p-6 shadow-md border-t-4 border-green-500">
+                <h3 class="text-lg font-bold text-green-800 mb-4">2. Presisi (Repetabilitas / RSD)</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="droplet" class="w-4 h-4 text-green-600"></i> Cara Penyiapan Larutan</h4>
+                    <p class="text-sm text-gray-600 leading-relaxed text-justify">Siapkan sampel air lingkungan riil atau sampel LFM. Lakukan tahapan preparasi dari awal (seperti dekstruksi pemanasan asam atau penyaringan) secara independen sebanyak <strong>minimal 7 kali ulangan</strong>. Untuk repetabilitas, pengujian harus dikerjakan oleh analis yang sama, menggunakan alat ukur yang sama, dan pada waktu yang berdekatan.</p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-green-600"></i> Rumus Perhitungan</h4>
+                    <ul class="text-sm text-gray-700 space-y-2 font-mono">
+                      <li>Rata-rata (x&#772;): <span class="font-bold text-green-700">x&#772; = (&Sigma;x<sub>i</sub>) / n</span></li>
+                      <li>Simpangan Baku (SD): <span class="font-bold text-green-700">SD = &radic;[ &Sigma;(x<sub>i</sub> - x&#772;)&sup2; / (n - 1) ]</span></li>
+                      <li>Persentase RSD: <span class="font-bold text-green-700">%RSD = (SD / x&#772;) &times; 100%</span></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Akurasi -->
+              <div class="glass-card rounded-2xl p-6 shadow-md border-t-4 border-purple-500">
+                <h3 class="text-lg font-bold text-purple-800 mb-4">3. Akurasi (Perolehan Kembali / %Recovery)</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="droplet" class="w-4 h-4 text-purple-600"></i> Cara Penyiapan Larutan</h4>
+                    <p class="text-sm text-gray-600 leading-relaxed text-justify">Siapkan sampel air lingkungan asli tanpa perlakuan (sebagai C Sampel). Kemudian, ambil sampel yang sama lalu tambahkan (spike) larutan standar pekat secara perlahan. <br><br><strong>Kritis:</strong> Volume larutan spike baku yang dimasukkan <strong>tidak boleh lebih dari 5% total volume</strong> sampel pengujian agar tidak merusak matriks asli sampel (efek pengenceran yang signifikan).</p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-purple-600"></i> Rumus Perhitungan</h4>
+                    <div class="bg-white p-3 rounded text-sm font-mono text-center border text-purple-800 font-bold mb-3">
+                      %R = [ (C LFM - C Sampel Asli) / C Spike Target ] &times; 100%
+                    </div>
+                    <p class="text-xs text-gray-500 font-mono">* C LFM = Konsentrasi sampel terukur setelah di-spike.<br>* C Spike Target = Konsentrasi standar tambahan secara teoritis.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. MDL -->
+              <div class="glass-card rounded-2xl p-6 shadow-md border-t-4 border-orange-500">
+                <h3 class="text-lg font-bold text-orange-800 mb-4">4. Batas Deteksi (MDL & LOQ)</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="droplet" class="w-4 h-4 text-orange-600"></i> Cara Penyiapan Larutan</h4>
+                    <p class="text-sm text-gray-600 leading-relaxed text-justify">Siapkan pelarut atau reagen air bebas analit (blanko). Tambahkan larutan standar (spike) dengan konsentrasi yang sangat rendah (kira-kira 1 hingga 5 kali perkiraan MDL instrumen, yang biasanya ditentukan dari *Signal to Noise Ratio*). Analisis 7 kali pengulangan (preparasi hingga pembacaan) untuk melihat limit deteksi metode.</p>
+                  </div>
+                  <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-orange-600"></i> Rumus Perhitungan</h4>
+                    <ul class="text-sm text-gray-700 space-y-2 font-mono">
+                      <li>Batas Deteksi (MDL): <span class="font-bold text-orange-700">MDL = t &times; SD</span></li>
+                      <li>Batas Kuantitasi (LOQ): <span class="font-bold text-orange-700">LOQ = 10 &times; SD</span></li>
+                    </ul>
+                    <p class="text-xs text-gray-500 font-mono mt-3">* t = Nilai distribusi student-t dengan tingkat kepercayaan 99% (Untuk 7 ulangan, df=6, nilai t = 3,143).</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </section>
-
         <section id="page-linearitas" class="page-content hidden">
           <div class="glass-card rounded-2xl p-6 shadow-lg">
             <h2 class="text-xl font-bold mb-4" title="Syarat SNI 6989-84:2019: r >= 0.995">Linearitas</h2>
@@ -1559,7 +1648,27 @@ btnPDF.addEventListener('click', function() {
     alert("Gagal mengunduh PDF. Error: " + e.message);
   }
 });
+// --- LOGIKA TOMBOL BUKA TUTUP LANGKAH (VERSI ANTI GAGAL) ---
+document.addEventListener('click', function(e) {
+  // 1. Cek apakah yang diklik adalah tombol langkah (atau ikon di dalamnya)
+  var btn = e.target.closest('[id^="btn-show-steps-"]');
+  if (!btn) return;
 
+  // 2. Ambil ujung namanya (misal: 'lin', 'pres', 'akur', 'mdl')
+  var paramType = btn.id.replace('btn-show-steps-', '');
+  
+  // 3. Cari kotak rumusnya yang sesuai
+  var box = document.getElementById('box-steps-' + paramType);
+  var icon = btn.querySelector('span');
+
+  // 4. Buka atau Tutup kotaknya
+  if (box) {
+    box.classList.toggle('hidden');
+    if (icon) {
+      icon.textContent = box.classList.contains('hidden') ? '▶' : '▼';
+    }
+  }
+});
 // --- INIT ---
 renderHome();
 initLinTable(5);
