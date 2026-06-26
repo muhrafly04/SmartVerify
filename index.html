@@ -199,6 +199,16 @@
               <button id="btn-calc-lin" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
             </div>
             <div id="lin-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+            <button id="btn-show-steps-lin" class="mt-4 text-sm font-semibold text-teal-600 hover:text-teal-800 hidden items-center gap-1 transition-all">
+              <span>▶</span> Tunjukkan Langkah Perhitungan Regresi
+            </button>
+            <div id="box-steps-lin" class="hidden mt-3 p-4 bg-teal-50 border border-teal-200 rounded-lg text-sm font-mono text-gray-700 space-y-2">
+              <p class="font-bold border-b border-teal-300 pb-1 mb-2">Jejak Kalkulasi Regresi Linear:</p>
+              <p id="step-lin-sum"></p>
+              <p id="step-lin-slope"></p>
+              <p id="step-lin-intercept"></p>
+              <p id="step-lin-r" class="font-bold text-teal-800"></p>
+            </div>
             <div id="lin-chart-container" class="hidden mt-6 pt-6 border-t">
               <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
                 <div class="lg:col-span-3 relative bg-white border border-gray-200 p-2 rounded-lg">
@@ -250,6 +260,15 @@
             </table>
             <button id="btn-calc-pres" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung Repetabilitas</button>
             <div id="pres-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+            <button id="btn-show-steps-pres" class="mt-4 text-sm font-semibold text-teal-600 hover:text-teal-800 hidden items-center gap-1 transition-all">
+              <span>▶</span> Tunjukkan Langkah Perhitungan
+            </button>
+            <div id="box-steps-pres" class="hidden mt-3 p-4 bg-teal-50 border border-teal-200 rounded-lg text-sm font-mono text-gray-700 space-y-2">
+              <p class="font-bold border-b border-teal-300 pb-1 mb-2">Jejak Kalkulasi %RSD:</p>
+              <p id="step-pres-mean"></p>
+              <p id="step-pres-sd"></p>
+              <p id="step-pres-rsd" class="font-bold text-teal-800"></p>
+            </div>
           </div>
 
           <div id="content-reprodusibilitas" class="glass-card rounded-2xl rounded-tl-none p-6 shadow-lg hidden">
@@ -309,6 +328,14 @@
             </table>
             <button id="btn-calc-akur" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
             <div id="akur-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+            <button id="btn-show-steps-akur" class="mt-4 text-sm font-semibold text-teal-600 hover:text-teal-800 hidden items-center gap-1 transition-all">
+              <span>▶</span> Tunjukkan Langkah Perhitungan
+            </button>
+            <div id="box-steps-akur" class="hidden mt-3 p-4 bg-teal-50 border border-teal-200 rounded-lg text-sm font-mono text-gray-700 space-y-2">
+              <p class="font-bold border-b border-teal-300 pb-1 mb-2">Jejak Kalkulasi %Recovery:</p>
+              <p id="step-akur-rumus"></p>
+              <p id="step-akur-hasil" class="font-bold text-teal-800"></p>
+            </div>
           </div>
           <div id="akur-no-project-msg" class="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-lg hidden">
             <p class="text-sm text-amber-800">Silakan pilih atau buat proyek baru terlebih dahulu.</p>
@@ -333,6 +360,15 @@
             </div>
             <button id="btn-calc-mdl" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow">Hitung</button>
             <div id="mdl-result" class="hidden border-t pt-4 mt-4 space-y-2"></div>
+            <button id="btn-show-steps-mdl" class="mt-4 text-sm font-semibold text-teal-600 hover:text-teal-800 hidden items-center gap-1 transition-all">
+              <span>▶</span> Tunjukkan Langkah Perhitungan
+            </button>
+            <div id="box-steps-mdl" class="hidden mt-3 p-4 bg-teal-50 border border-teal-200 rounded-lg text-sm font-mono text-gray-700 space-y-2">
+              <p class="font-bold border-b border-teal-300 pb-1 mb-2">Jejak Kalkulasi MDL & LOQ:</p>
+              <p id="step-mdl-sd"></p>
+              <p id="step-mdl-calc" class="font-bold text-teal-800"></p>
+              <p id="step-loq-calc" class="font-bold text-teal-800"></p>
+            </div>
             
             <div id="mdl-acceptance-table" class="hidden border-t pt-6 mt-6">
               <h3 class="text-lg font-bold text-gray-800 mb-4">Tabel Uji Keberterimaan Penentuan MDL</h3>
@@ -1150,6 +1186,14 @@ function calcLinearitas() {
   document.getElementById('lin-eq-text').textContent = 'y = ' + slope.toFixed(4) + 'x + ' + intercept.toFixed(4);
   document.getElementById('lin-r-text').textContent = 'r = ' + r.toFixed(4);
 
+  // --- INJEKSI LANGKAH PERHITUNGAN ---
+  document.getElementById('btn-show-steps-lin').classList.remove('hidden');
+  document.getElementById('btn-show-steps-lin').classList.add('flex');
+  document.getElementById('step-lin-sum').innerHTML = "1. Rekap Data: Σx=" + sx.toFixed(3) + ", Σy=" + sy.toFixed(3) + ", Σxy=" + sxy.toFixed(4) + ", Σx²=" + sx2.toFixed(3) + ", Σy²=" + sy2.toFixed(3);
+  document.getElementById('step-lin-slope').innerHTML = "2. Slope (b) = [("+n+" × "+sxy.toFixed(4)+") - ("+sx.toFixed(3)+" × "+sy.toFixed(3)+")] / [("+n+" × "+sx2.toFixed(3)+") - ("+sx.toFixed(3)+")²] = <strong>" + slope.toFixed(4) + "</strong>";
+  document.getElementById('step-lin-intercept').innerHTML = "3. Intercept (a) = ["+sy.toFixed(3)+" - ("+slope.toFixed(4)+" × "+sx.toFixed(3)+")] / "+n+" = <strong>" + intercept.toFixed(4) + "</strong>";
+  document.getElementById('step-lin-r').innerHTML = "4. Koefisien Korelasi (r) = <strong>" + r.toFixed(5) + "</strong>";
+
   var xS = x.slice().sort(function(a, b) { return a - b; });
   var xMin = xS[0], xMax = xS[xS.length - 1], pad = (xMax - xMin) * 0.1 || 0.1;
   var xL = [xMin - pad, xMax + pad], yL = [slope * xL[0] + intercept, slope * xL[1] + intercept];
@@ -1163,29 +1207,8 @@ function calcLinearitas() {
         { label: 'Regresi', data: [{ x: xL[0], y: yL[0] }, { x: xL[1], y: yL[1] }], borderColor: '#EF4444', borderWidth: 2, pointRadius: 0, showLine: true, fill: false }
       ] 
     },
-    options: { 
-      responsive: false, 
-      animation: false, 
-      plugins: { 
-        legend: { position: 'top' }, 
-        title: { display: true, text: 'Kurva Linearitas' }
-      }, 
-      scales: { 
-        x: { title: { display: true, text: 'Konsentrasi (mg/L)' } }, 
-        y: { title: { display: true, text: 'Absorbansi' } } 
-      } 
-    },
-    plugins: [{
-      id: 'customCanvasBackgroundColor',
-      beforeDraw: (chart) => {
-        const ctx = chart.canvas.getContext('2d');
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, chart.width, chart.height);
-        ctx.restore();
-      }
-    }]
+    options: { responsive: false, animation: false, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Kurva Linearitas' } }, scales: { x: { title: { display: true, text: 'Konsentrasi (mg/L)' } }, y: { title: { display: true, text: 'Absorbansi' } } } },
+    plugins: [{ id: 'customCanvasBackgroundColor', beforeDraw: (chart) => { const ctx = chart.canvas.getContext('2d'); ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore(); } }]
   });
   document.getElementById('lin-chart-container').classList.remove('hidden');
   saveProjectData();
@@ -1199,6 +1222,14 @@ function calcPresisi() {
   if (activeProject) { activeProject.results.pres = pass; saveProjects(); }
   document.getElementById('pres-result').innerHTML = '<p><strong>Rata-rata:</strong> ' + m.toFixed(4) + ' mg/L</p><p><strong>SD:</strong> ' + s.toFixed(6) + '</p><p><strong>%RSD:</strong> ' + rsd.toFixed(4) + '%</p><p><strong>CV Horwitz:</strong> ' + cv.toFixed(4) + '%</p><p><strong>0,67 × CV Horwitz:</strong> ' + lim.toFixed(4) + '%</p><p><strong>Syarat:</strong> %RSD ≤ 0,67×CV Horwitz → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
   document.getElementById('pres-result').classList.remove('hidden');
+  
+  // --- INJEKSI LANGKAH PERHITUNGAN ---
+  document.getElementById('btn-show-steps-pres').classList.remove('hidden');
+  document.getElementById('btn-show-steps-pres').classList.add('flex');
+  document.getElementById('step-pres-mean').innerHTML = "1. Rata-rata (x̄) = Total / " + vals.length + " = <strong>" + m.toFixed(4) + "</strong>";
+  document.getElementById('step-pres-sd').innerHTML = "2. Simpangan Baku (SD) = <strong>" + s.toFixed(6) + "</strong>";
+  document.getElementById('step-pres-rsd').innerHTML = "3. %RSD = (" + s.toFixed(6) + " / " + m.toFixed(4) + ") × 100% = <strong>" + rsd.toFixed(4) + "%</strong>";
+  
   saveProjectData();
 }
 
@@ -1216,6 +1247,14 @@ function calcAkurasi() {
   t += '</table>';
   document.getElementById('akur-result').innerHTML = t + '<p class="mt-3"><strong>Rata-rata %Recovery:</strong> ' + avg.toFixed(2) + '%</p><p><strong>Syarat:</strong> 85% – 115% → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
   document.getElementById('akur-result').classList.remove('hidden');
+
+  // --- INJEKSI LANGKAH PERHITUNGAN ---
+  var rataLfm = mean(vals);
+  document.getElementById('btn-show-steps-akur').classList.remove('hidden');
+  document.getElementById('btn-show-steps-akur').classList.add('flex');
+  document.getElementById('step-akur-rumus').innerHTML = "1. %R = [ (C Sampel Uji (LFM) - C Sampel Asli) / C Spike ] × 100%";
+  document.getElementById('step-akur-hasil').innerHTML = "2. Rata-rata %R = [ (" + rataLfm.toFixed(4) + " - " + cs.toFixed(4) + ") / " + csp.toFixed(4) + " ] × 100% = <strong>" + avg.toFixed(2) + "%</strong>";
+  
   saveProjectData();
 }
 
@@ -1240,6 +1279,13 @@ function calcMDL() {
   if (activeProject) { activeProject.results.mdl = pass; saveProjects(); }
   document.getElementById('mdl-result').innerHTML = '<p><strong>Rata-rata:</strong> ' + m.toFixed(6) + ' mg/L</p><p><strong>SD:</strong> ' + s.toFixed(6) + '</p><p><strong>MDL (3,14 × SD):</strong> ' + mdl.toFixed(6) + ' mg/L</p><p><strong>LOQ (10 × SD):</strong> ' + loq.toFixed(6) + ' mg/L</p><p><strong>%RSD:</strong> ' + rsd.toFixed(4) + '%</p><p><strong>Cek Presisi:</strong> %RSD ≤ 0,67×CV Horwitz → ' + badgeHtml(pass, 'Diterima', 'Ditolak') + '</p>';
   document.getElementById('mdl-result').classList.remove('hidden');
+
+  // --- INJEKSI LANGKAH PERHITUNGAN ---
+  document.getElementById('btn-show-steps-mdl').classList.remove('hidden');
+  document.getElementById('btn-show-steps-mdl').classList.add('flex');
+  document.getElementById('step-mdl-sd').innerHTML = "1. Simpangan Baku (SD) Blanko = <strong>" + s.toFixed(6) + "</strong>";
+  document.getElementById('step-mdl-calc').innerHTML = "2. MDL = 3.14 × " + s.toFixed(6) + " = <strong>" + mdl.toFixed(6) + "</strong>";
+  document.getElementById('step-loq-calc').innerHTML = "3. LOQ = 10 × " + s.toFixed(6) + " = <strong>" + loq.toFixed(6) + "</strong>";
 
   var cspike = parseFloat(document.getElementById('mdl-cspike').value) || 0;
   var baku = parseFloat(document.getElementById('mdl-baku-mutu').value) || 0;
